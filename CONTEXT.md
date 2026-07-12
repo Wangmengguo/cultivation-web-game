@@ -1,12 +1,5 @@
 # Project Context
 
-当前项目已通过阶段 1 验收，进入阶段 2 纸面玩法验证准备阶段。游戏核心方向已确认为世代经营与定期大考。Spec 已吸收宗主权力与弟子自主性、战斗战略控制、多种经营哲学和第一段完整验证体验七阶段等修订；项目简述已吸收以一天为基础的时间循环与 5 到 10 分钟节奏假设、性格属性状态三类人物信息、全力攻击攻守兼备全力防守三姿态与无撤退阈值、规则与动态与 AI 的边界，以及第一段完整体验的 Make it work 内容原则。2026-07-11 又统一了战斗输入口径与临界撤退判定口径，并通过阶段 1 验收，不再等待用户复核；同日确认在世积累—寿元限制—死亡终止未来—已有成果交接关系，第一轮纸面验证主问题改为有限寿元是否真实改变玩家对人、机会与资源的分配以及在世积累与死亡损失能否共同形成可归因跨代因果。
+阶段 2 纸面玩法验证进行中。不写代码，不选技术栈，不展开完整系统。
 
-当前资料入口：[Docs/README.md](./Docs/README.md)
-中心产物：[Docs/GAME_SPEC.md](./Docs/GAME_SPEC.md)
-当前决策：[Docs/06-decision-register.md](./Docs/06-decision-register.md)
-下一次对话：[Docs/07-next-session.md](./Docs/07-next-session.md)
-
-Game Spec v0 已通过阶段 1 验收。下一步准备阶段 2 纸面玩法验证。当前不写代码，不选技术栈，不展开完整系统。
-
-`Docs/archive/` 中的文件只供历史追溯，不具备当前决策效力。
+入口：[Docs/README.md](./Docs/README.md) · 规格：[Docs/GAME_SPEC.md](./Docs/GAME_SPEC.md) · 决策：[Docs/06-decision-register.md](./Docs/06-decision-register.md) · 任务：[Docs/07-next-session.md](./Docs/07-next-session.md)
