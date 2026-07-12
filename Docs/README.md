@@ -42,6 +42,16 @@
 - 状态段落每轮收口时整段覆盖重写，不追加编年史；历史看 git 与决策台账。
 - 行数预算：`HANDOFF.md` / `CONTEXT.md` ≤ 5 行正文；`07-next-session.md` ≤ 50 行；README 状态段 ≤ 5 行；`02-stage-gates.md` / `plan.md` 的"当前状态"各 ≤ 5 行。超预算即视为重复报警。
 
+## 文档结构变更说明（2026-07-12）
+
+2026-07-12 已完成一次有意的文档瘦身，不是内容丢失：
+
+- 目的：消除同一进展在 `HANDOFF.md`、`CONTEXT.md`、本 README、`02-stage-gates.md`、`07-next-session.md`、`plan.md` 六处重复复述；历史留底改由 git 承担。
+- 基线提交：`docs: baseline before doc slim-down`；瘦身提交：`docs: restructure to single-source-of-truth with pointers`。
+- 未改文件：`GAME_SPEC.md`、`08-round-1-paper-prototype.md`、`01/03/04/05` 号文档、`archive/`。决策台账只加了 `D-01` 起编号列，条目正文未改。
+- 若发现状态类文档明显变短、编年史消失：这是预期结果。正式决定在 [06-decision-register.md](./06-decision-register.md)，推演证据在 [08-round-1-paper-prototype.md](./08-round-1-paper-prototype.md)，旧长文叙事用 `git show` / `git log` 追溯。
+- **禁止**把旧的多文件复述叙事「恢复」回去；收口时只改 06（新决定）+ 覆盖重写 07 状态段 + git commit。
+
 ## 文件状态
 
 本资料库统一使用以下状态：
