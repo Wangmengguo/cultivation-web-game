@@ -1,0 +1,1 @@
+项目路径：/Users/arnoldwang/01_Active_Projects/cultivation-web-game。请只读评审 docs/design/core-architecture.md，结合 CONTEXT.md。用户关心：这个核心架构内容“对不对”？如果对，应该如何基于它搭一个新的快速迭代雏形？重点请评估：1) 玩家作为宗主的下令/资源分配权是否足够成为核心；2) 当前文档是否仍受旧 index.html/MVP 影响；3) 哪些原则要保留，哪些要改；4) 第一版雏形应该验证什么，最小功能是什么，不要过度设计。输出中文，给明确裁决和最小雏形建议。不要改文件。
