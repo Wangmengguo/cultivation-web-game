@@ -1,13 +1,13 @@
 # 宗门修真项目资料库
 
-更新日期：2026-07-12
-当前状态：阶段 2 纸面玩法验证进行中，下一步为三场景联合宗门局面。详见 [下一次对话](./07-next-session.md)。
+更新日期：2026-07-13
+当前状态：阶段 2 纸面玩法验证收口中；第二轮十八个月闭环初稿及执行规则已完成；内部全流程推演尚未执行，但仍按后续安排作为阶段 2 必做步骤。详见 [下一次对话](./07-next-session.md)。
 
 ## 当前阶段
 
 核心方向：世代经营与定期大考（弟子寿数有限，宗门底蕴跨代保留，公开大事件检验此前经营）。
 当前位置：阶段 2 纸面玩法验证进行中；[Game Spec v0](./GAME_SPEC.md) 已于 2026-07-11 通过阶段 1 验收。
-下一步：建立三场景联合宗门局面，验证共享资源竞争与跨代因果（见 [07-next-session.md](./07-next-session.md)）。
+下一步：按后续安排完成一次内部全流程推演，再进入用户真人试玩（见 [07-next-session.md](./07-next-session.md)）。
 约束：不写代码，不选技术栈，不展开完整子系统；正式规格以 GAME_SPEC 为准。
 
 ## 阅读顺序
@@ -21,7 +21,8 @@
 7. [材料台账](./03-material-register.md)：已经收集了什么，每份材料何时使用。
 8. [推进计划](./plan.md)：项目当前处于什么阶段、正在解决什么、接下来按什么顺序推进，以及各项工作的完成标准。它只负责推进状态与工作顺序，不承载游戏设计内容；设计以 `GAME_SPEC.md` 为准，正式决定以 `06-decision-register.md` 为准。
 9. [第一轮纸面原型](./08-round-1-paper-prototype.md)：第一轮可推演纸面材料（Prototype，临时参数不自动升级为正式规则）。
-10. [下一次对话](./07-next-session.md)：下一项任务和禁止提前展开的系统。
+10. [第二轮纸面原型](./09-round-2-paper-prototype.md)：两代接力局面的临时人物、资源、大考与交接参数。
+11. [下一次对话](./07-next-session.md)：下一项任务和禁止提前展开的系统。
 
 ## 文档效力
 
@@ -38,7 +39,7 @@
 ## 写作规则
 
 - 一个事实只在一个文件中以正文出现；其他文件只允许一句话结论 + 链接。
-- 信息唯一归属：决定 → [06-decision-register.md](./06-decision-register.md)；推演证据与临时参数 → [08-round-1-paper-prototype.md](./08-round-1-paper-prototype.md)；当前规格 → [GAME_SPEC.md](./GAME_SPEC.md)；推进顺序与完成标准 → [plan.md](./plan.md)；下次任务 → [07-next-session.md](./07-next-session.md)；`CONTEXT.md` / `HANDOFF.md` → 仅指针。
+- 信息唯一归属：决定 → [06-decision-register.md](./06-decision-register.md)；推演证据与临时参数 → 对应轮次的纸面原型；当前规格 → [GAME_SPEC.md](./GAME_SPEC.md)；推进顺序与完成标准 → [plan.md](./plan.md)；下次任务 → [07-next-session.md](./07-next-session.md)；`CONTEXT.md` / `HANDOFF.md` → 仅指针。
 - 状态段落每轮收口时整段覆盖重写，不追加编年史；历史看 git 与决策台账。
 - 行数预算：`HANDOFF.md` / `CONTEXT.md` ≤ 5 行正文；`07-next-session.md` ≤ 50 行；README 状态段 ≤ 5 行；`02-stage-gates.md` / `plan.md` 的"当前状态"各 ≤ 5 行。超预算即视为重复报警。
 

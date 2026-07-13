@@ -10,6 +10,10 @@ Work directly for trivial, single-step, urgent, or tightly coupled tasks where d
 
 Codex remains responsible for task decomposition, reading delegated results, integration, verification, and the final answer.
 
+## Delegation Cost Rule
+
+`handoff` has startup, prompt-packaging, and result-verification costs. Do not use it for simple, bounded tasks where those costs outweigh its benefits. For simple delegated work, prefer a normal Codex subagent (`spawn_agent`) using the ordinary model; reserve `handoff` for work where a specialized backend or independent model materially improves speed, quality, coverage, or cost.
+
 ## Preferred Handoff Routing
 
 - For tasks with an explicit plan, prefer `handoff run --backend grok` (Grok 4.5) for as many suitable delegated steps as practical because it is inexpensive.
