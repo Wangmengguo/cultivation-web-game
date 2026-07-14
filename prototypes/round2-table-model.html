@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>两代接力局面｜最小表格模型 v1.1</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: oklch(95% 0.012 78);
+      --paper-deep: oklch(91% 0.018 76);
+      --ink: oklch(24% 0.02 58);
+      --muted: oklch(49% 0.02 62);
+      --line: oklch(75% 0.025 70);
+      --accent: oklch(45% 0.12 35);
+      --accent-soft: oklch(89% 0.045 45);
+      --safe: oklch(43% 0.09 145);
+      --safe-soft: oklch(91% 0.035 145);
+      --warn: oklch(55% 0.12 75);
+      --warn-soft: oklch(92% 0.05 82);
+      --danger: oklch(46% 0.15 25);
+      --danger-soft: oklch(90% 0.055 25);
+      --radius-s: 4px;
+      --radius-m: 8px;
+      --radius-l: 12px;
+      --gap: 12px;
+      font-family: -apple-system, "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--paper-deep); }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.7;
+    }
+    button, select, input { font: inherit; color: inherit; }
+    button, select, input[type="number"] { min-height: 40px; }
+    button { touch-action: manipulation; }
+    button:active { transform: scale(.96); }
+    button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 3px solid color-mix(in oklch, var(--accent) 42%, transparent);
+      outline-offset: 2px;
+    }
+    button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+    a.skip-link {
+      position: fixed; z-index: 100; top: 8px; left: 8px; padding: 8px 12px;
+      background: var(--ink); color: var(--paper); transform: translateY(-160%);
+    }
+    a.skip-link:focus { transform: translateY(0); }
+
+    .app-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: end;
+      padding: 18px 22px 14px;
+      background: var(--ink);
+      color: oklch(94% 0.015 75);
+      box-shadow: 0 2px 8px rgba(28, 22, 17, .18);
+    }
+    .app-header h1 {
+      margin: 0;
+      font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight: 700;
+      line-height: 1.2;
+      text-wrap: balance;
+    }
+    .eyebrow { margin: 0 0 3px; color: oklch(78% 0.04 70); font-size: 12px; letter-spacing: .08em; }
+    .header-meta { text-align: right; font-size: 13px; color: oklch(82% 0.025 70); }
+    .header-meta strong { display: block; color: oklch(96% 0.02 70); font-size: 18px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(290px, 350px);
+      min-height: calc(100vh - 96px);
+    }
+    main { min-width: 0; padding: 18px 20px 50px; }
+    aside {
+      min-width: 0;
+      padding: 18px 16px;
+      background: var(--paper-deep);
+      box-shadow: inset 1px 0 0 var(--line);
+    }
+    .sticky-log { position: sticky; top: 12px; }
+
+    .step-ribbon {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-block: 1px solid var(--line);
+      margin-bottom: 14px;
+    }
+    .step-cell { padding: 8px 10px; font-size: 13px; color: var(--muted); text-align: center; }
+    .step-cell + .step-cell { border-left: 1px solid var(--line); }
+    .step-cell.active { color: var(--paper); background: var(--accent); font-weight: 700; }
+    .step-cell.done { color: var(--safe); background: var(--safe-soft); }
+    .step-cell.skipped { text-decoration: line-through; opacity: .6; }
+
+    .section {
+      margin: 0 0 14px;
+      padding: 14px;
+      background: oklch(98% 0.007 76);
+      box-shadow: 0 1px 3px rgba(50, 40, 30, .12);
+      border-radius: var(--radius-m);
+    }
+    .section.public-panel { background: oklch(96.5% 0.014 78); }
+    .section h2, .section h3, aside h2 {
+      margin: 0 0 10px;
+      font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+      line-height: 1.3;
+      text-wrap: balance;
+    }
+    .section h2 { font-size: 20px; }
+    .section h3, aside h2 { font-size: 17px; }
+    .section-heading {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+    .subtle { color: var(--muted); font-size: 13px; }
+    .cause { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .cause::before { content: "原因："; color: var(--ink); font-weight: 700; }
+    .undefined-rule {
+      padding: 9px 11px;
+      background: var(--warn-soft);
+      color: oklch(37% 0.08 65);
+      border-radius: var(--radius-s);
+      font-size: 13px;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      margin-bottom: 12px;
+    }
+    .summary-item { padding: 9px 10px; background: var(--paper); }
+    .summary-item span { display: block; color: var(--muted); font-size: 11px; }
+    .summary-item strong { display: block; margin-top: 1px; font-size: 16px; }
+
+    .table-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior: contain; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 7px 9px; border-bottom: 1px solid color-mix(in oklch, var(--line) 62%, transparent); vertical-align: top; }
+    th { text-align: left; color: var(--muted); font-weight: 650; white-space: nowrap; }
+    td.num, th.num { text-align: right; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--safe); }
+    .status-dot.warn { background: var(--warn); }
+    .status-dot.danger { background: var(--danger); }
+    .status-dot.muted { background: var(--muted); }
+
+    .notice {
+      padding: 10px 12px;
+      margin: 10px 0;
+      background: var(--accent-soft);
+      color: oklch(34% 0.07 38);
+      border-radius: var(--radius-s);
+    }
+    .notice.safe { background: var(--safe-soft); color: oklch(33% 0.075 145); }
+    .notice.warn { background: var(--warn-soft); color: oklch(35% 0.08 65); }
+    .notice.danger { background: var(--danger-soft); color: oklch(34% 0.12 25); }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+    .field { display: grid; gap: 4px; align-content: start; }
+    .field > label, .field > span { font-size: 12px; color: var(--muted); font-weight: 700; }
+    select, input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-s);
+      background: oklch(99% 0.003 78);
+      padding: 7px 9px;
+    }
+    .check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 12px; }
+    .check-line { display: flex; align-items: flex-start; gap: 8px; min-height: 40px; padding: 7px 8px; background: var(--paper); border-radius: var(--radius-s); }
+    .check-line input { margin-top: 5px; accent-color: var(--accent); }
+    .check-line small { display: block; color: var(--muted); }
+
+    .button-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+    .btn {
+      border: 0;
+      border-radius: var(--radius-s);
+      padding: 7px 13px;
+      background: var(--ink);
+      color: var(--paper);
+      cursor: pointer;
+      transition-property: transform, opacity;
+      transition-duration: 120ms;
+    }
+    .btn.primary { background: var(--accent); }
+    .btn.safe { background: var(--safe); }
+    .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+    .btn.danger { background: var(--danger); }
+
+    .probability-bar { display: flex; min-height: 42px; margin: 9px 0; overflow: hidden; border-radius: var(--radius-s); background: var(--paper-deep); }
+    .prob-segment { display: grid; place-items: center; min-width: 0; padding: 4px; font-size: 12px; text-align: center; color: var(--paper); }
+    .prob-segment.a, .prob-segment.safe { background: var(--safe); }
+    .prob-segment.b { background: oklch(55% 0.1 105); color: oklch(20% 0.04 105); }
+    .prob-segment.c, .prob-segment.injured { background: var(--warn); color: oklch(23% 0.05 70); }
+    .prob-segment.d, .prob-segment.dead { background: var(--danger); }
+    .prob-segment.severe { background: oklch(46% 0.14 48); }
+    .range-list { display: flex; gap: 6px 12px; flex-wrap: wrap; margin: 7px 0; font-size: 13px; }
+    .range-chip { padding: 3px 7px; background: var(--paper-deep); border-radius: var(--radius-s); }
+    .range-chip.hit { background: var(--accent); color: var(--paper); font-weight: 700; }
+    .dice-box { margin-top: 12px; padding: 12px; background: var(--paper-deep); border-radius: var(--radius-m); }
+    .dice-controls { display: grid; grid-template-columns: auto minmax(100px, 180px) auto; gap: 8px; align-items: end; }
+    .dice-result { margin-top: 10px; font-weight: 700; }
+
+    details { margin-top: 9px; border-top: 1px solid var(--line); padding-top: 7px; }
+    summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 40px; padding-top: 6px; }
+
+    .question-list { display: grid; gap: 7px; }
+    .question-row { display: grid; grid-template-columns: 110px 72px minmax(0, 1fr); gap: 9px; padding: 8px 9px; background: var(--paper); }
+    .question-row strong.yes { color: var(--safe); }
+    .question-row strong.no { color: var(--danger); }
+
+    .handover-grid { display: grid; grid-template-columns: repeat(5, minmax(175px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .handover-column { padding: 10px; background: var(--paper); min-height: 180px; }
+    .handover-column h3 { font-size: 15px; }
+    .handover-column ul { margin: 0; padding-left: 18px; }
+    .handover-column li { margin-bottom: 9px; font-size: 12px; }
+    .handover-column .cause { font-size: 11px; }
+
+    .log-box {
+      height: min(62vh, 650px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: oklch(96% 0.012 75);
+      box-shadow: inset 0 0 0 1px var(--line);
+      border-radius: var(--radius-s);
+    }
+    .log-entry { padding: 9px 10px; border-bottom: 1px solid color-mix(in oklch, var(--line) 65%, transparent); font-size: 12px; }
+    .log-entry:last-child { border-bottom: 0; }
+    .log-entry time { display: block; color: var(--accent); font-weight: 700; }
+    .log-entry p { margin: 2px 0; }
+    .log-empty { padding: 20px 12px; color: var(--muted); font-size: 13px; }
+    .export-status { min-height: 24px; margin-top: 5px; font-size: 12px; color: var(--muted); }
+
+    .terminal { padding: 24px; background: var(--ink); color: var(--paper); border-radius: var(--radius-l); }
+    .terminal h2 { color: oklch(95% 0.025 72); font-size: clamp(24px, 4vw, 38px); }
+    .terminal .cause { color: oklch(78% 0.025 72); }
+    .decision-timeline { margin: 12px 0 0; padding-left: 20px; }
+    .decision-timeline li { margin-bottom: 8px; }
+
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      aside { box-shadow: inset 0 1px 0 var(--line); }
+      .sticky-log { position: static; }
+      .log-box { height: 330px; }
+    }
+    @media (max-width: 650px) {
+      .app-header { grid-template-columns: 1fr; padding: 15px 14px 12px; }
+      .header-meta { text-align: left; }
+      main { padding: 12px 10px 35px; }
+      aside { padding: 14px 10px 28px; }
+      .step-ribbon { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .step-cell:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
+      .step-cell:nth-child(4) { border-top: 1px solid var(--line); }
+      .summary-strip, .form-grid, .check-grid { grid-template-columns: 1fr; }
+      .dice-controls { grid-template-columns: 1fr; }
+      .question-row { grid-template-columns: 1fr auto; }
+      .question-row .cause { grid-column: 1 / -1; }
+      .handover-grid { grid-template-columns: 1fr; overflow: visible; }
+      .handover-column { min-height: 0; }
+      .button-row .btn { width: 100%; }
+    }
+    @media (hover: hover) {
+      .btn:hover { opacity: .86; }
+      tbody tr:hover td { background: color-mix(in oklch, var(--accent-soft) 42%, transparent); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">阶段 3 · 无代码验证材料</p>
+      <h1>两代接力局面｜最小表格模型 v1.1</h1>
+    </div>
+    <div class="header-meta"><span>十八个月 · 四步月序</span><strong id="header-month">第 1 月</strong></div>
+  </header>
+
+  <div class="layout">
+    <main id="main-content" data-testid="main" aria-live="polite"></main>
+    <aside aria-label="试玩日志">
+      <div class="sticky-log">
+        <h2>全程日志</h2>
+        <div id="log-box" class="log-box" data-testid="log"></div>
+        <div class="button-row">
+          <button class="btn ghost" type="button" onclick="copyLog()" data-testid="copy-log">复制记录</button>
+          <button class="btn ghost" type="button" onclick="downloadLog()" data-testid="download-log">下载 txt</button>
+          <button class="btn danger" type="button" onclick="resetGame()">重新开始</button>
+        </div>
+        <div id="export-status" class="export-status" role="status"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    'use strict';
+
+    const CHARACTERS = {
+      guiyuan: { name: '归元真人', initialLife: 6, role: '最强战力／剑典原作者' },
+      lin: { name: '林砚', initialLife: null, role: '功法承接者' },
+      yue: { name: '岳徊', initialLife: 3, role: '沉锋谷引路者' },
+      su: { name: '苏砚', initialLife: null, role: '秘境继任候选' },
+      shen: { name: '沈砺', initialLife: 5, role: '炼器者' }
+    };
+
+    const STEP_NAMES = { life: '① 寿命检测', action: '② 行动检测', exam: '③ 大考检测', end: '④ 月末结算' };
+    const RESULT_NAMES = { A: 'A 反攻告捷', B: 'B 基业尽保', C: 'C 山门独存', D: 'D 山门陷落' };
+    const IMAGE_NAMES = { complete: '防务完备', one: '一处缺口', two: '两处缺口', collapse: '濒临崩溃', overwhelming: '压倒性优势' };
+    const WAGER_NAMES = { gate: '守山门', estate: '保基业', counter: '反攻妖巢' };
+    const POSTURE_NAMES = { attack: '全力进攻', balanced: '攻守兼备', defense: '全力防守' };
+    const ACTION_NAMES = {
+      support: '备考支援', collect: '沉锋谷采集', array: '建造护山阵', organize: '整理《归元剑典》',
+      break_full: '突破闭关·充分准备', break_ok: '突破闭关·尚可准备', break_weak: '突破闭关·勉强准备',
+      qualify: '硬资格培养', qualify_retry: '硬资格二培', study_self: '自行研习《归元剑典》',
+      study_tutor: '归元亲授研习', tutor: '亲授林砚', guide_su: '带苏砚入沉锋谷',
+      follow_yue: '随岳徊入谷历练', draw_route_map: '整理沉锋谷引路图', solo_collect: '独自沉锋谷采集',
+      transform_loot: '转化专业战利品', craft_tide_artifact: '炼制镇潮法宝', upgrade_array: '强化护山阵'
+    };
+
+    const BASE_MATRIX = {
+      complete: { gate: [0, 0, 100, 0], estate: [0, 90, 10, 0], counter: [60, 30, 10, 0] },
+      one: { gate: [0, 0, 95, 5], estate: [0, 55, 40, 5], counter: [25, 35, 30, 10] },
+      two: { gate: [0, 0, 70, 30], estate: [0, 20, 50, 30], counter: [5, 20, 35, 40] },
+      collapse: { gate: [0, 0, 30, 70], estate: [0, 5, 20, 75], counter: [0, 5, 15, 80] }
+    };
+
+    const INJURY_TABLE = {
+      attack: {
+        A: [45, 40, 13, 2], B: [65, 28, 6, 1], C: [35, 43, 17, 5], D: [5, 20, 40, 35]
+      },
+      balanced: {
+        A: [55, 35, 9, 1], B: [75, 22, 3, 0], C: [45, 40, 12, 3], D: [10, 25, 35, 30]
+      },
+      defense: {
+        B: [85, 14, 1, 0], C: [60, 33, 6, 1], D: [20, 35, 30, 15]
+      }
+    };
+
+    const OVERWHELMING_INJURY = {
+      attack: [75, 23, 2, 0], balanced: [90, 9, 1, 0], defense: [85, 14, 1, 0]
+    };
+
+    function freshCharacter(id) {
+      const def = CHARACTERS[id];
+      return {
+        id, name: def.name, life: def.initialLife, alive: true, injury: 'healthy', rest: 0,
+        currentAction: 'support', deathCause: '', deathMonth: null, lastDecisionMonth: null
+      };
+    }
+
+    function initialState() {
+      return {
+        month: 1,
+        step: 'life',
+        characters: Object.fromEntries(Object.keys(CHARACTERS).map(id => [id, freshCharacter(id)])),
+        resources: { pill: true, gengjin: 3 },
+        projects: {
+          array: { status: 'none', progress: 0, startMonth: null, completeMonth: null },
+          manual: { status: 'none', progress: 0, startMonth: null, completeMonth: null },
+          breakthrough: { status: 'none', progress: 0, tier: null, attempted: false, success: false, startMonth: null, completeMonth: null },
+          qualification: { status: 'none', progress: 0, attempts: 0, qualified: false, startMonth: null, completeMonth: null },
+          learning: { units: 0, complete: false, completeMonth: null },
+          guidance: { status: 'none', progress: 0, startMonth: null, completeMonth: null },
+          routeMap: { status: 'none', progress: 0, startMonth: null, completeMonth: null },
+          lootConversion: { status: 'none', progress: 0, startMonth: null, completeMonth: null },
+          shenLegacy: { status: 'none', kind: null, progress: 0, startMonth: null, completeMonth: null },
+          soloHarvests: []
+        },
+        externalAssets: true,
+        rewardTiers: 0,
+        firstExam: null,
+        secondExam: null,
+        examDraft: { wager: 'estate', posture: 'balanced', roster: [], rosterInitialized: false },
+        manualFacts: { sameMonthHarvest: false, arrayEnhanced: false, adaptedArtifact: false, otherMobility: false, stableSupply: false, secondMobile: false },
+        manualFirstImage: '',
+        resourceEvents: [{ month: 0, delta: 3, cause: '开局库存' }],
+        pillUse: null,
+        pendingRolls: [],
+        pendingAfter: null,
+        lastRoll: null,
+        lastResolution: null,
+        handover: null,
+        logs: [],
+        decisions: [],
+        gameOver: false,
+        terminalKind: null,
+        terminalReason: '',
+        actionError: '',
+        actionDraft: {},
+        soloYieldDraft: 0,
+        initialized: false
+      };
+    }
+
+    let state = initialState();
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
+    }
+
+    function clone(value) { return JSON.parse(JSON.stringify(value)); }
+    function alive(id) { return state.characters[id].alive; }
+    function characterName(id) { return CHARACTERS[id].name; }
+    function isHealthy(id) { const c = state.characters[id]; return c.alive && c.injury === 'healthy' && c.rest === 0; }
+    function isHeavy(id) { return state.characters[id].injury === 'severe'; }
+    function isBreakthroughAction(action) { return ['break_full', 'break_ok', 'break_weak'].includes(action); }
+    function hasProfessionalLoot() { return ['A', 'B'].includes(state.firstExam?.result) && state.rewardTiers >= 2; }
+    function hasTideArtifact() { return state.projects.shenLegacy.status === 'complete' && state.projects.shenLegacy.kind === 'artifact'; }
+    function hasEnhancedArray() { return state.projects.shenLegacy.status === 'complete' && state.projects.shenLegacy.kind === 'array_upgrade'; }
+    function routeStatus() {
+      const guided = state.projects.guidance.status === 'complete';
+      const mapped = state.projects.routeMap.status === 'complete';
+      if (alive('yue')) return { key: 'yue', label: '岳徊仍可引路', reason: '岳徊在世；是否另有稳定接班人尚未判定。' };
+      if (guided && mapped && alive('su') && state.projects.qualification.qualified) return { key: 'facts_ready', label: '接续事实齐备，稳定性待裁决', reason: '苏砚合格且有三个月带队经历，完整引路图已完成；OQ-5 未给“稳定引路者”标准。' };
+      if (mapped) return { key: 'map_only', label: '引路图留存，人员接续不足', reason: '完整引路图是可携知识，但不自动替代硬资格或个人熟练度。' };
+      if (guided && alive('su')) return { key: 'experience_only', label: '苏砚有带队经历，无完整引路图', reason: '只记录三个月带队经历；OQ-5 不允许据此判定稳定通路。' };
+      return { key: 'lost', label: '岳徊路线经验永久失去', reason: `岳徊已故，且完整引路图未完成${guided ? '；苏砚的带队经历仍属个人事实' : ''}。` };
+    }
+    function stableSupplyAssessment() {
+      const route = routeStatus();
+      if (state.manualFacts.stableSupply) return { ok: true, key: 'confirmed', label: '主持人已确认稳定', reason: `稳定补给判据已人工确认；公开路线事实为“${route.label}”。` };
+      if (route.key === 'facts_ready') return { ok: false, key: 'pending', label: '事实齐备，稳定性待裁决', reason: `${route.reason} 未人工确认前，本问不把稳定补给计为满足。` };
+      return { ok: false, key: 'absent', label: '当前不满足', reason: route.reason };
+    }
+
+    function addLog(step, text, reason = '') {
+      state.logs.push({ month: state.month, step, text, reason });
+      requestAnimationFrame(() => {
+        const box = document.getElementById('log-box');
+        if (box) box.scrollTop = box.scrollHeight;
+      });
+    }
+
+    function addDecision(text) {
+      state.decisions.push({ month: state.month, text });
+    }
+
+    function initialize() {
+      if (state.initialized) return;
+      state.initialized = true;
+      addLog('开局', '庚金髓 3 份，延寿丹 1 枚；五名人物进入第 1 月。', '取自 09「共享资源」与五名人物开局卡。');
+      render();
+    }
+
+    function lifeText(c) {
+      if (!c.alive) return `已故（第 ${c.deathMonth} 月）`;
+      if (c.life === null) return '本局未给定寿尽月';
+      if (c.life === 0) return '0（本月检测死亡）';
+      return `${c.life} 个月`;
+    }
+
+    function injuryText(c) {
+      if (!c.alive) return '死亡';
+      if (c.injury === 'healthy') return '健康';
+      if (c.injury === 'injured') return `受伤，能力约 75%${c.rest ? `，待休养 ${c.rest} 月` : ''}`;
+      return `重伤，战斗约 40%／修炼生产约 50%${c.rest ? `，待休养 ${c.rest} 月` : ''}`;
+    }
+
+    function injuryDot(c) {
+      if (!c.alive) return 'danger';
+      if (c.injury === 'healthy') return '';
+      return c.injury === 'severe' ? 'danger' : 'warn';
+    }
+
+    function displayAction(c) {
+      if (!c.alive) return '无';
+      if (c.rest > 0) return `自动休养（${c.rest} 月待恢复）`;
+      return ACTION_NAMES[c.currentAction] || c.currentAction || '备考支援';
+    }
+
+    function projectProgressText(project, total) {
+      if (project.status === 'complete') return `完成（第 ${project.completeMonth} 月）`;
+      if (project.status === 'damaged') return '受损，本轮不可修复';
+      if (project.status === 'failed') return '失败';
+      if (project.status === 'active') return `${project.progress}/${total}`;
+      return `未开工 0/${total}`;
+    }
+
+    function monthCountdown() {
+      if (state.month <= 6) return `第一次大考还有 ${6 - state.month} 个月（本月是否大考：${state.month === 6 ? '是' : '否'}）`;
+      if (state.month <= 18) return `第二次大考还有 ${18 - state.month} 个月（本月是否大考：${state.month === 18 ? '是' : '否'}）`;
+      return '局面结束';
+    }
+
+    function renderStepRibbon() {
+      const order = ['life', 'action', 'exam', 'end'];
+      const activeIndex = order.indexOf(state.step);
+      return `<div class="step-ribbon" data-testid="step-ribbon">${order.map((step, index) => {
+        const noExam = step === 'exam' && ![6, 18].includes(state.month);
+        const cls = step === state.step ? 'active' : index < activeIndex || (noExam && activeIndex > 1) ? 'done' : '';
+        return `<div class="step-cell ${cls} ${noExam ? 'skipped' : ''}">${STEP_NAMES[step]}${noExam ? '（本月跳过）' : ''}</div>`;
+      }).join('')}</div>`;
+    }
+
+    function renderPublicPanel() {
+      const peopleRows = Object.values(state.characters).map(c => `<tr>
+        <td><span class="status-dot ${injuryDot(c)}"></span><strong>${esc(c.name)}</strong><div class="subtle">${esc(CHARACTERS[c.id].role)}</div></td>
+        <td>${esc(lifeText(c))}</td>
+        <td>${esc(injuryText(c))}</td>
+        <td>${esc(displayAction(c))}</td>
+      </tr>`).join('');
+      const p = state.projects;
+      const route = routeStatus();
+      const shenLegacyLabel = p.shenLegacy.kind === 'artifact' ? '镇潮法宝' : p.shenLegacy.kind === 'array_upgrade' ? '强化护山阵' : '二选一成果';
+      return `<section class="section public-panel" data-testid="public-info">
+        <div class="section-heading">
+          <h2>先公开，再决定</h2>
+          <p>第 ${state.month} 月 · ${STEP_NAMES[state.step] || '终局'}，以下状态在任何选择之前可见</p>
+        </div>
+        <div class="summary-strip">
+          <div class="summary-item"><span>庚金髓余额</span><strong>${state.resources.gengjin} 份</strong></div>
+          <div class="summary-item"><span>延寿丹</span><strong>${state.resources.pill ? '1 枚' : '已用'}</strong></div>
+          <div class="summary-item"><span>外部产业</span><strong>${state.externalAssets ? '完整' : '已失去'}</strong></div>
+          <div class="summary-item"><span>大考倒计时</span><strong>${state.month <= 6 ? `${6 - state.month} 月` : `${18 - state.month} 月`}</strong></div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>人物</th><th>公开寿元</th><th>伤势</th><th>当前安排</th></tr></thead>
+          <tbody>${peopleRows}</tbody>
+        </table></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>项目</th><th>进度／状态</th><th>公开条件</th></tr></thead>
+          <tbody>
+            <tr><td>护山阵</td><td>${esc(projectProgressText(p.array, 3))}</td><td>开工 6 份，沈砺连续 3 月</td></tr>
+            <tr><td>《归元剑典》整理</td><td>${esc(projectProgressText(p.manual, 3))}</td><td>归元连续 3 月</td></tr>
+            <tr><td>归元突破</td><td>${esc(projectProgressText(p.breakthrough, 3))}${p.breakthrough.tier ? ` · ${esc(tierName(p.breakthrough.tier))}` : ''}</td><td>连续 3 月；充分档开工 3 份；成功寿元 +24</td></tr>
+            <tr><td>苏砚资格</td><td>${p.qualification.qualified ? '已合格' : esc(projectProgressText(p.qualification, 3))} · 已尝试 ${p.qualification.attempts}/2</td><td>每次开工 3 份，连续 3 月；二培最早第 10 月</td></tr>
+            <tr><td>林砚功法研习</td><td>${p.learning.complete ? `完全掌握（第 ${p.learning.completeMonth} 月）` : `${p.learning.units}/12 学习单位`}</td><td>第 10 月起；自研 +1/月，亲授 +2/月</td></tr>
+            <tr><td>岳徊带队／苏砚随行</td><td>${esc(projectProgressText(p.guidance, 3))}</td><td>第 10 月起；苏砚须合格；同步连续 3 月；全队当月仍只产 +2</td></tr>
+            <tr><td>完整引路图</td><td>${esc(projectProgressText(p.routeMap, 3))}</td><td>第 10 月起；岳徊连续 3 月；期间不采集</td></tr>
+            <tr><td>沉锋谷通路状态</td><td>${esc(route.label)}</td><td>${esc(route.reason)}</td></tr>
+            <tr><td>专业战利品转化</td><td>${esc(projectProgressText(p.lootConversion, 3))}</td><td>第 10 月起；一考 A/B 且有专业战利品；不改庚金髓数字</td></tr>
+            <tr><td>沈砺后三月成果</td><td>${p.shenLegacy.kind ? `${esc(shenLegacyLabel)}：${esc(projectProgressText(p.shenLegacy, 3))}` : '未选择 0/3'}</td><td>转化后在镇潮法宝／强化阵中二选一；强化需完整阵</td></tr>
+          </tbody>
+        </table></div>
+        <p class="cause">${esc(monthCountdown())}。项目材料在开工时一次扣除；未修改安排自动延续。</p>
+        ${renderRelevantProbabilities()}
+      </section>`;
+    }
+
+    function tierName(tier) { return ({ full: '充分准备', ok: '尚可准备', weak: '勉强准备' })[tier]; }
+
+    function renderRelevantProbabilities() {
+      const parts = [];
+      const q = state.projects.qualification;
+      if (alive('su') && !q.qualified && (q.status === 'active' || q.attempts === 0 || (q.attempts === 1 && state.month >= 10))) {
+        parts.push('<p><strong>苏砚硬资格培养：</strong>每次开始前公开同一结果表。</p>');
+        parts.push(renderRanges([70, 27, 3, 0], ['成功', '受伤且失败', '重伤且失败', '死亡'], null));
+      }
+      if (alive('guiyuan') && (!state.projects.breakthrough.attempted || state.projects.breakthrough.status === 'active')) {
+        parts.push(`<div class="table-wrap"><table><thead><tr><th>突破准备档</th><th class="num">成功</th><th class="num">受伤</th><th class="num">重伤</th><th class="num">死亡</th></tr></thead><tbody>
+          <tr><td>充分，需 3 份辅助</td><td class="num">90%</td><td class="num">9%</td><td class="num">1%</td><td class="num">0%</td></tr>
+          <tr><td>尚可</td><td class="num">70%</td><td class="num">26%</td><td class="num">3%</td><td class="num">1%</td></tr>
+          <tr><td>勉强</td><td class="num">50%</td><td class="num">40%</td><td class="num">5%</td><td class="num">5%</td></tr>
+        </tbody></table></div>`);
+      }
+      if ([6, 18].includes(state.month)) {
+        parts.push('<div class="notice">本月有大考。完整基础矩阵、姿态转移和伤势表已在本页底部“全部公开规则表”公开；行动结算后，考试面板会再展示本次最终区间。</div>');
+      }
+      const recent = state.lastResolution ? `<div class="notice"><strong>最近掷骰：${esc(state.lastResolution.title)}，骰值 ${state.lastResolution.value} → ${esc(state.lastResolution.label)}</strong><p class="cause">骰值落在公开区间 ${esc(state.lastResolution.range)}；已同步写入右侧日志。</p></div>` : '';
+      return `${recent}${parts.length ? `<h3>本月相关公开概率</h3>${parts.join('')}` : '<p class="subtle">本月没有即将到期的概率事件；全部概率表仍可在页面下方展开查看。</p>'}`;
+    }
+
+    function renderLifeStep() {
+      const deathWarnings = Object.values(state.characters).filter(c => c.alive && c.life === 0);
+      const expiring = Object.values(state.characters).filter(c => c.alive && c.life === 1);
+      const eligible = potionEligible();
+      return `<section class="section" data-testid="life-step">
+        <h2>${STEP_NAMES.life}</h2>
+        ${deathWarnings.length ? `<div class="notice danger"><strong>本步确认死亡：</strong>${deathWarnings.map(c => c.name).join('、')} 的寿元已在上月末扣至 0。</div>` : ''}
+        ${expiring.length ? `<div class="notice warn"><strong>寿元将尽：</strong>${expiring.map(c => `${c.name} 将在第 ${state.month} 月末寿尽`).join('；')}。本月仍可行动和在合规时参战。</div>` : '<div class="notice safe">本月没有人物将在月末寿尽。</div>'}
+        ${state.resources.pill ? (eligible.length ? `<div class="field">
+          <label for="pill-target">延寿丹决定，本步后不可反悔</label>
+          <select id="pill-target" data-testid="pill-target"><option value="">本月不用，继续保留</option>${eligible.map(id => `<option value="${id}">给${CHARACTERS[id].name}（+12 个月）</option>`).join('')}</select>
+        </div>` : '<p class="subtle">延寿丹仍在，但本月没有处于正式服用窗口的对象。</p>') : '<p class="subtle">延寿丹已经使用。</p>'}
+        <div class="button-row"><button class="btn primary" type="button" onclick="confirmLifeStep()" data-testid="confirm-life">确认寿命检测</button></div>
+        <p class="cause">第 N 月末寿尽者本月仍有最后一次行动；只在第 N+1 月寿命检测死亡。延寿丹仅能在本步使用。</p>
+      </section>`;
+    }
+
+    function potionEligible() {
+      if (!state.resources.pill) return [];
+      const deadlines = { yue: 3, shen: 5, guiyuan: 6 };
+      return Object.keys(deadlines).filter(id => alive(id) && state.month <= deadlines[id]);
+    }
+
+    function confirmLifeStep() {
+      if (state.step !== 'life' || state.gameOver) return;
+      const target = document.getElementById('pill-target')?.value || '';
+      if (target) {
+        if (!potionEligible().includes(target)) return;
+        state.characters[target].life += 12;
+        state.resources.pill = false;
+        state.pillUse = { id: target, month: state.month };
+        addDecision(`第 ${state.month} 月寿命检测：延寿丹给${characterName(target)}`);
+        addLog(STEP_NAMES.life, `延寿丹给${characterName(target)}，其寿元 +12 个月。`, `唯一延寿丹只在寿命检测可用，${characterName(target)}仍在截止窗口内。`);
+      } else {
+        addDecision(`第 ${state.month} 月寿命检测：延寿丹未使用`);
+        addLog(STEP_NAMES.life, `延寿丹${state.resources.pill ? '继续保留' : '已无可用'}。`, '玩家在寿命检测步未指定服用者。');
+      }
+      Object.values(state.characters).filter(c => c.alive && c.life === 0).forEach(c => killCharacter(c.id, `寿元于第 ${state.month - 1} 月末归零`, state.month));
+      state.step = 'action';
+      state.actionError = '';
+      state.actionDraft = {};
+      render();
+    }
+
+    function actionOptions(id) {
+      const c = state.characters[id];
+      if (!c.alive) return [];
+      if (c.rest > 0) return [{ value: 'rest', label: `自动休养（剩余 ${c.rest} 月）`, disabled: true }];
+      if (isLockedProjectAction(id, c.currentAction)) return [{ value: c.currentAction, label: `${ACTION_NAMES[c.currentAction]}（连续项目自动延续）` }];
+      const options = [{ value: 'support', label: '备考支援' }];
+      if (id === 'yue') {
+        options.push({ value: 'collect', label: '沉锋谷采集（本月 +2 份）' });
+        if (state.month >= 10 && state.projects.qualification.qualified && alive('su') && state.characters.su.rest === 0 && state.projects.guidance.status === 'none') {
+          options.push({ value: 'guide_su', label: '带苏砚入谷（同步随行，连续 3 月；全队 +2/月）' });
+        }
+        if (state.month >= 10 && state.projects.routeMap.status === 'none') {
+          options.push({ value: 'draw_route_map', label: '整理引路图（连续 3 月；本月不采集）' });
+        }
+      }
+      const yueActuallyHarvests = ['collect', 'guide_su'].includes(state.actionDraft.yue);
+      const availableWithRuling = state.resources.gengjin + (state.manualFacts.sameMonthHarvest && yueActuallyHarvests ? 2 : 0);
+      if (id === 'shen') {
+        if (state.projects.array.status === 'none' && availableWithRuling >= 6) options.push({ value: 'array', label: '建造护山阵（开工扣 6 份，连续 3 月）' });
+        if (state.month >= 10 && hasProfessionalLoot() && state.projects.lootConversion.status === 'none') {
+          options.push({ value: 'transform_loot', label: '转化专业战利品（连续 3 月；定性事实）' });
+        }
+        if (state.month >= 10 && state.projects.lootConversion.status === 'complete' && state.projects.shenLegacy.status === 'none') {
+          options.push({ value: 'craft_tide_artifact', label: '炼制镇潮法宝（连续 3 月）' });
+          if (state.projects.array.status === 'complete') options.push({ value: 'upgrade_array', label: '强化护山阵（连续 3 月）' });
+        }
+      }
+      if (id === 'guiyuan') {
+        if (state.projects.manual.status !== 'complete') options.push({ value: 'organize', label: `整理《归元剑典》（${state.projects.manual.progress}/3）` });
+        if (!state.projects.breakthrough.attempted && state.projects.breakthrough.status === 'none') {
+          if (availableWithRuling >= 3) options.push({ value: 'break_full', label: '突破闭关·充分准备（开工扣 3 份）' });
+          options.push({ value: 'break_ok', label: '突破闭关·尚可准备' });
+          options.push({ value: 'break_weak', label: '突破闭关·勉强准备' });
+        }
+        if (canTutor()) options.push({ value: 'tutor', label: '亲授林砚（与林砚同步）' });
+      }
+      if (id === 'lin' && state.month >= 10 && !state.projects.learning.complete) {
+        if (state.projects.manual.status === 'complete') options.push({ value: 'study_self', label: `自行研习（${state.projects.learning.units}/12）` });
+        if (canTutor()) options.push({ value: 'study_tutor', label: `接受归元亲授（${state.projects.learning.units}/12）` });
+      }
+      if (id === 'su') {
+        if (!state.projects.qualification.qualified) {
+          const q = state.projects.qualification;
+          if (q.attempts === 0 && q.status === 'none' && availableWithRuling >= 3) options.push({ value: 'qualify', label: '硬资格培养（开工扣 3 份，连续 3 月）' });
+          if (q.attempts === 1 && q.status === 'failed' && state.month >= 10 && availableWithRuling >= 3) options.push({ value: 'qualify_retry', label: '硬资格二培（开工扣 3 份，连续 3 月）' });
+        } else if (state.month >= 10) {
+          if (state.actionDraft.yue === 'guide_su') options.push({ value: 'follow_yue', label: '随岳徊入谷历练（与带队同步）' });
+          else options.push({ value: 'solo_collect', label: '独自沉锋谷采集（规则未定义：手填 0—2）' });
+        }
+      }
+      return options;
+    }
+
+    function canTutor() {
+      const g = state.characters.guiyuan;
+      return state.month >= 10 && alive('guiyuan') && alive('lin') && isHealthy('guiyuan') && isHealthy('lin') &&
+        g.rest === 0 && !isLockedProjectAction('guiyuan', g.currentAction) && !state.projects.learning.complete;
+    }
+
+    function isLockedProjectAction(id, action) {
+      if (id === 'shen' && action === 'array') return state.projects.array.status === 'active';
+      if (id === 'shen' && action === 'transform_loot') return state.projects.lootConversion.status === 'active';
+      if (id === 'shen' && ['craft_tide_artifact', 'upgrade_array'].includes(action)) return state.projects.shenLegacy.status === 'active';
+      if (id === 'guiyuan' && action === 'organize') return state.projects.manual.status === 'active';
+      if (id === 'guiyuan' && isBreakthroughAction(action)) return state.projects.breakthrough.status === 'active';
+      if (id === 'su' && ['qualify', 'qualify_retry'].includes(action)) return state.projects.qualification.status === 'active';
+      if (id === 'yue' && action === 'guide_su') return state.projects.guidance.status === 'active';
+      if (id === 'su' && action === 'follow_yue') return state.projects.guidance.status === 'active';
+      if (id === 'yue' && action === 'draw_route_map') return state.projects.routeMap.status === 'active';
+      return false;
+    }
+
+    function renderActionStep() {
+      ensureActionDraft();
+      const rows = Object.keys(CHARACTERS).map(id => {
+        const c = state.characters[id];
+        if (!c.alive) return `<tr><td>${c.name}</td><td>已故，无行动菜单</td><td>${esc(c.deathCause)}</td></tr>`;
+        const options = actionOptions(id);
+        const draftLegal = options.some(o => o.value === state.actionDraft[id]);
+        const selected = draftLegal ? state.actionDraft[id] : (options[0]?.value || 'support');
+        state.actionDraft[id] = selected;
+        return `<tr><td id="action-label-${id}"><strong>${c.name}</strong><div class="subtle">${CHARACTERS[id].role}</div></td><td>
+          <select id="action-${id}" data-testid="action-${id}" aria-labelledby="action-label-${id}" onchange="updateActionDraft('${id}', this.value)" ${c.rest > 0 ? 'disabled' : ''}>${options.map(o => `<option value="${o.value}" ${o.value === selected ? 'selected' : ''} ${o.disabled ? 'disabled' : ''}>${esc(o.label)}</option>`).join('')}</select>
+        </td><td>${actionLegalityReason(id, options)}</td></tr>`;
+      }).join('');
+      return `<section class="section" data-testid="action-step">
+        <h2>${STEP_NAMES.action}</h2>
+        <div class="undefined-rule"><strong>规则未定义人工裁决：</strong>09 没写同一行动检测中岳徊新采的 2 份能否供另一人当月开工。需要采用“先采后投”时勾选；不勾选则只用月初余额。</div>
+        <label class="check-line"><input type="checkbox" data-fact="sameMonthHarvest" ${state.manualFacts.sameMonthHarvest ? 'checked' : ''} onchange="updateManualFact('sameMonthHarvest', this.checked)"><span>允许本月取材先入账再开工<small>只有本月安排岳徊采集或带队正常取材时，额外 2 份才可用</small></span></label>
+        <div class="table-wrap"><table><thead><tr><th>人物</th><th>当月主要安排，只列当前合法选项</th><th>合法性／原因</th></tr></thead><tbody>${rows}</tbody></table></div>
+        ${state.actionDraft.su === 'solo_collect' ? `<div class="undefined-rule"><strong>苏砚独采规则未定义：</strong>主持人手动输入本月获得 0—2 份庚金髓；本模型不掷伤势。若岳徊同月也在沉锋谷取材，全队总产仍不得超过 2 份。</div>
+          <div class="field"><label for="solo-yield">苏砚本月独采获得份数（0—2）</label><input id="solo-yield" type="number" min="0" max="2" step="1" inputmode="numeric" value="${state.soloYieldDraft}" onchange="updateSoloYield(this.value)" data-testid="solo-yield"></div>` : ''}
+        <div class="undefined-rule">连续三月项目在本模型中一经开工即自动延续；规则没有给出主动中断后的进度保留公式，因此不提供中断按钮。伤势导致的休养按 D-58 自动暂停，伤愈后续原安排。</div>
+        ${state.actionError ? `<div class="notice danger" role="alert">${esc(state.actionError)}</div>` : ''}
+        <div class="button-row"><button class="btn primary" type="button" onclick="confirmActions()" data-testid="confirm-actions">结算本月行动</button></div>
+      </section>`;
+    }
+
+    function actionLegalityReason(id, options) {
+      const c = state.characters[id];
+      if (c.rest > 0) return `伤势强制休养，恢复后续原安排。`;
+      const omitted = [];
+      const ruledIncome = state.manualFacts.sameMonthHarvest && ['collect', 'guide_su'].includes(state.actionDraft.yue) ? 2 : 0;
+      if (id === 'shen' && state.projects.array.status === 'none' && state.resources.gengjin + ruledIncome < 6) omitted.push('可用庚金髓不足 6 份，建阵不列入');
+      if (id === 'lin' && state.month < 10) omitted.push('第 1—9 月禁止研习');
+      if (id === 'su' && !state.projects.qualification.qualified && state.projects.qualification.attempts === 1 && state.month < 10) omitted.push('二培最早第 10 月');
+      if (id === 'guiyuan' && state.resources.gengjin + ruledIncome < 3 && !state.projects.breakthrough.attempted) omitted.push('充分档需 3 份，当前不列入');
+      if (id === 'yue' && state.month < 10) omitted.push('带队与引路图属于第 10 月起第二代经营行动');
+      if (id === 'shen' && state.month < 10) omitted.push('战利品转化路线第 10 月起开放');
+      if (id === 'shen' && state.month >= 10 && !hasProfessionalLoot()) omitted.push('一考非 A/B 或不存在专业战利品，不能转化');
+      if (id === 'su' && state.projects.qualification.qualified && state.month < 10) omitted.push('随行／独采属于第 10 月起第二代经营行动');
+      return omitted.join('；') || `未修改时延续“${ACTION_NAMES[c.currentAction] || '备考支援'}”。`;
+    }
+
+    function selectedActions() {
+      const result = {};
+      Object.keys(CHARACTERS).forEach(id => {
+        const c = state.characters[id];
+        if (!c.alive) return;
+        result[id] = c.rest > 0 ? 'rest' : (document.getElementById(`action-${id}`)?.value || 'support');
+      });
+      return result;
+    }
+
+    function ensureActionDraft() {
+      const y = state.characters.yue;
+      if (y.alive && state.actionDraft.yue === undefined) state.actionDraft.yue = y.rest > 0 ? 'rest' : y.currentAction;
+      Object.keys(CHARACTERS).forEach(id => {
+        const c = state.characters[id];
+        if (!c.alive || state.actionDraft[id] !== undefined) return;
+        const options = actionOptions(id);
+        state.actionDraft[id] = options.some(o => o.value === c.currentAction) ? c.currentAction : (options[0]?.value || 'support');
+      });
+    }
+
+    function updateActionDraft(id, value) {
+      state.actionDraft[id] = value;
+      state.actionError = '';
+      renderAndRefocus(`#action-${id}`);
+    }
+
+    function updateSoloYield(value) {
+      const amount = Number(value);
+      state.soloYieldDraft = Number.isInteger(amount) ? amount : value;
+      state.actionError = '';
+    }
+
+    function confirmActions() {
+      if (state.step !== 'action' || state.pendingRolls.length || state.gameOver) return;
+      const actions = selectedActions();
+      state.actionError = '';
+      if ((actions.guiyuan === 'tutor') !== (actions.lin === 'study_tutor')) {
+        state.actionError = '归元亲授必须由归元选择“亲授林砚”，林砚同时选择“接受归元亲授”。';
+        render(); return;
+      }
+      if ((actions.yue === 'guide_su') !== (actions.su === 'follow_yue')) {
+        state.actionError = '岳徊“带苏砚入谷”与苏砚“随岳徊入谷历练”必须同月同步选择。';
+        render(); return;
+      }
+      const soloYield = actions.su === 'solo_collect' ? Number(document.getElementById('solo-yield')?.value ?? state.soloYieldDraft) : 0;
+      if (actions.su === 'solo_collect' && (!Number.isInteger(soloYield) || soloYield < 0 || soloYield > 2)) {
+        state.actionError = '苏砚独采获得份数必须是 0—2 的整数。';
+        render(); return;
+      }
+      const yueValleyYield = ['collect', 'guide_su'].includes(actions.yue) ? 2 : 0;
+      if (yueValleyYield + soloYield > 2) {
+        state.actionError = `沉锋谷当月总产上限为 2 份；岳徊本月已取得 ${yueValleyYield} 份，苏砚独采只能填写 0。`;
+        render(); return;
+      }
+      let needed = 0;
+      if (actions.shen === 'array' && state.projects.array.status === 'none') needed += 6;
+      if (['break_full'].includes(actions.guiyuan) && state.projects.breakthrough.status === 'none') needed += 3;
+      if (['qualify', 'qualify_retry'].includes(actions.su) && state.projects.qualification.status !== 'active') needed += 3;
+      const sameMonthIncome = state.manualFacts.sameMonthHarvest && ['collect', 'guide_su'].includes(actions.yue) ? 2 : 0;
+      if (needed > state.resources.gengjin + sameMonthIncome) {
+        state.actionError = `同月开工共需 ${needed} 份庚金髓；月初 ${state.resources.gengjin} 份${state.manualFacts.sameMonthHarvest ? `，本月实际采集可先入账 ${sameMonthIncome} 份` : ''}，仍不足。`;
+        render(); return;
+      }
+      const decisions = [];
+      Object.entries(actions).forEach(([id, action]) => {
+        const c = state.characters[id];
+        if (action !== 'rest') {
+          c.currentAction = action;
+          c.lastDecisionMonth = state.month;
+          decisions.push(`${c.name}=${ACTION_NAMES[action]}`);
+        } else decisions.push(`${c.name}=自动休养`);
+      });
+      addDecision(`第 ${state.month} 月行动：${decisions.join('；')}`);
+      addLog(STEP_NAMES.action, `玩家确认：${decisions.join('；')}。`, '每人一项主要安排；未改则沿用，非法选项不进入菜单。');
+      if (state.manualFacts.sameMonthHarvest) addLog('规则未定义裁决', `本月${['collect', 'guide_su'].includes(actions.yue) ? '采用' : '勾选但未触发'}“岳徊先采、项目后投”。`, '09 未定义同月人物间结算顺序，由主持人手动确认。');
+      resolveActions(actions, soloYield);
+    }
+
+    function resolveActions(actions, soloYield = 0) {
+      state.pendingAfter = 'action';
+      const results = [];
+      Object.entries(actions).forEach(([id, action]) => {
+        const c = state.characters[id];
+        if (!c.alive) return;
+        if (action === 'rest') {
+          c.rest = Math.max(0, c.rest - 1);
+          if (c.rest === 0) {
+            c.injury = 'healthy';
+            results.push(`${c.name}休养完成，恢复健康`);
+          } else results.push(`${c.name}休养 1 月，仍需 ${c.rest} 月`);
+          return;
+        }
+        if (action === 'collect' || action === 'guide_su') {
+          state.resources.gengjin += 2;
+          state.resourceEvents.push({ month: state.month, delta: 2, cause: action === 'guide_su' ? '岳徊带队入谷正常取材' : '岳徊沉锋谷采集' });
+          results.push(`${action === 'guide_su' ? '岳徊带苏砚入谷并正常取材' : '岳徊采集'} +2 份庚金髓`);
+        }
+        if (action === 'solo_collect') {
+          state.resources.gengjin += soloYield;
+          state.resourceEvents.push({ month: state.month, delta: soloYield, cause: '苏砚独自沉锋谷采集（主持人手填）' });
+          state.projects.soloHarvests.push({ month: state.month, amount: soloYield });
+          results.push(`苏砚独采由主持人填写 +${soloYield} 份庚金髓，不掷伤势`);
+          addLog('规则未定义裁决', `苏砚第 ${state.month} 月独采获得 ${soloYield} 份。`, 'OQ-6 未给产量与伤势参数；主持人在 0—2 内手填，本模型不掷伤势。');
+        }
+      });
+      Object.entries(actions).forEach(([id, action]) => {
+        const c = state.characters[id];
+        if (!c.alive || action === 'rest' || action === 'collect' || action === 'solo_collect') return;
+        if (action === 'array') progressArray(results);
+        if (action === 'organize') progressManual(results);
+        if (isBreakthroughAction(action)) progressBreakthrough(action, results);
+        if (['qualify', 'qualify_retry'].includes(action)) progressQualification(action, results);
+        if (action === 'study_self') progressLearning(1, '自行研习', results);
+        if (action === 'study_tutor') progressLearning(2, '归元亲授', results);
+        if (action === 'guide_su') progressGuidance(results);
+        if (action === 'draw_route_map') progressRouteMap(results);
+        if (action === 'transform_loot') progressLootConversion(results);
+        if (['craft_tide_artifact', 'upgrade_array'].includes(action)) progressShenLegacy(action, results);
+      });
+      if (results.length) addLog(STEP_NAMES.action, results.join('；') + '。', `按当月合法安排结算；${state.manualFacts.sameMonthHarvest ? '主持人允许本月取材先入账，只有实际安排岳徊采集或带队时才生效' : '项目开工只读取月初余额，不预支本月取材'}。`);
+      if (state.pendingRolls.length) {
+        state.lastRoll = null;
+        render();
+      } else completePendingPhase();
+    }
+
+    function progressArray(results) {
+      const p = state.projects.array;
+      if (p.status === 'none') {
+        state.resources.gengjin -= 6; state.resourceEvents.push({ month: state.month, delta: -6, cause: '护山阵开工' }); p.status = 'active'; p.startMonth = state.month;
+        results.push('护山阵开工，扣 6 份庚金髓');
+      }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.status = 'complete'; p.completeMonth = state.month; state.characters.shen.currentAction = 'support';
+        results.push(`护山阵 3/3 完成`);
+      } else results.push(`护山阵 ${p.progress}/3`);
+    }
+
+    function progressManual(results) {
+      const p = state.projects.manual;
+      if (p.status === 'none') { p.status = 'active'; p.startMonth = state.month; }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.status = 'complete'; p.completeMonth = state.month; state.characters.guiyuan.currentAction = 'support';
+        results.push('《归元剑典》整理 3/3，成为完整可携知识');
+      } else results.push(`《归元剑典》整理 ${p.progress}/3`);
+    }
+
+    function progressBreakthrough(action, results) {
+      const p = state.projects.breakthrough;
+      const tier = ({ break_full: 'full', break_ok: 'ok', break_weak: 'weak' })[action];
+      if (p.status === 'none') {
+        if (tier === 'full') { state.resources.gengjin -= 3; state.resourceEvents.push({ month: state.month, delta: -3, cause: '归元充分突破辅助' }); }
+        p.status = 'active'; p.tier = tier; p.startMonth = state.month; p.attempted = true;
+        results.push(`归元开始${tierName(tier)}突破${tier === 'full' ? '，扣 3 份辅助' : ''}`);
+      }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.completeMonth = state.month;
+        results.push('突破 3/3，进入公开掷骰');
+        queueRoll({ type: 'breakthrough', title: `归元突破结果｜${tierName(p.tier)}`, probs: breakProbabilities(p.tier), labels: ['成功', '受伤', '重伤', '死亡／天劫'], data: { id: 'guiyuan', tier: p.tier } });
+      } else results.push(`归元突破 ${p.progress}/3，本月整月闭关`);
+    }
+
+    function breakProbabilities(tier) {
+      return ({ full: [90, 9, 1, 0], ok: [70, 26, 3, 1], weak: [50, 40, 5, 5] })[tier];
+    }
+
+    function progressQualification(action, results) {
+      const p = state.projects.qualification;
+      if (p.status !== 'active') {
+        state.resources.gengjin -= 3; state.resourceEvents.push({ month: state.month, delta: -3, cause: p.attempts ? '苏砚硬资格二培开工' : '苏砚硬资格培养开工' }); p.status = 'active'; p.progress = 0; p.startMonth = state.month; p.attempts += 1;
+        results.push(`苏砚${action === 'qualify_retry' ? '二培' : '资格培养'}开工，扣 3 份`);
+      }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.completeMonth = state.month;
+        results.push(`资格培养 3/3，进入公开掷骰`);
+        queueRoll({ type: 'qualification', title: `苏砚硬资格${p.attempts === 2 ? '二培' : '培养'}结果`, probs: [70, 27, 3, 0], labels: ['成功', '受伤且未合格', '重伤且未合格', '死亡'], data: { id: 'su', attempt: p.attempts } });
+      } else results.push(`苏砚资格培养 ${p.progress}/3`);
+    }
+
+    function progressLearning(units, method, results) {
+      const p = state.projects.learning;
+      p.units = Math.min(12, p.units + units);
+      if (p.units >= 12) {
+        p.complete = true; p.completeMonth = state.month;
+        state.characters.lin.currentAction = 'support';
+        if (state.characters.guiyuan.currentAction === 'tutor') state.characters.guiyuan.currentAction = 'support';
+        results.push(`${method} +${units}，林砚完全掌握《归元剑典》`);
+      } else results.push(`${method} +${units}，研习进度 ${p.units}/12`);
+    }
+
+    function progressGuidance(results) {
+      const p = state.projects.guidance;
+      if (p.status === 'none') { p.status = 'active'; p.startMonth = state.month; }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.status = 'complete'; p.completeMonth = state.month;
+        state.characters.yue.currentAction = 'support';
+        state.characters.su.currentAction = 'support';
+        results.push('带队与随行 3/3：苏砚完成三个月带队熟练度提升，具备带队经历');
+        addLog('通路事实', '苏砚完成三个月带队熟练度提升，具备带队经历。', `第 ${p.startMonth}—${p.completeMonth} 月由岳徊带队；OQ-5 未给“升满／稳定引路者”标准，本模型不下该结论。`);
+      } else results.push(`岳徊带队／苏砚随行 ${p.progress}/3；本月全队正常取材 +2`);
+    }
+
+    function progressRouteMap(results) {
+      const p = state.projects.routeMap;
+      if (p.status === 'none') { p.status = 'active'; p.startMonth = state.month; }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.status = 'complete'; p.completeMonth = state.month; state.characters.yue.currentAction = 'support';
+        results.push('沉锋谷引路图 3/3，完整引路图成为可携知识');
+        addLog('通路事实', '完整沉锋谷引路图完成，进入可携知识盘点。', `岳徊第 ${p.startMonth}—${p.completeMonth} 月连续整理；期间不采集。`);
+      } else results.push(`沉锋谷引路图 ${p.progress}/3；本月不采集`);
+    }
+
+    function progressLootConversion(results) {
+      const p = state.projects.lootConversion;
+      if (p.status === 'none') { p.status = 'active'; p.startMonth = state.month; }
+      p.progress += 1;
+      if (p.progress >= 3) {
+        p.status = 'complete'; p.completeMonth = state.month; state.characters.shen.currentAction = 'support';
+        results.push('专业战利品转化 3/3，记录定性事实“已转化专业战利品”');
+        addLog('炼器事实', '已转化专业战利品。', `沈砺第 ${p.startMonth}—${p.completeMonth} 月连续转化；09 未给数量和兑换率，庚金髓余额不变。`);
+      } else results.push(`专业战利品转化 ${p.progress}/3；不增减庚金髓`);
+    }
+
+    function progressShenLegacy(action, results) {
+      const p = state.projects.shenLegacy;
+      const kind = action === 'craft_tide_artifact' ? 'artifact' : 'array_upgrade';
+      if (p.status === 'none') { p.status = 'active'; p.kind = kind; p.startMonth = state.month; }
+      p.progress += 1;
+      const label = kind === 'artifact' ? '镇潮法宝' : '强化护山阵';
+      if (p.progress >= 3) {
+        p.status = 'complete'; p.completeMonth = state.month; state.characters.shen.currentAction = 'support';
+        results.push(`${label} 3/3 完成，成为脱离沈砺个人的永久成果`);
+        addLog('炼器事实', `${label}完成。`, `沈砺第 ${p.startMonth}—${p.completeMonth} 月连续制作；不增减庚金髓。${kind === 'artifact' ? '自动联动二考问题 3 的法宝条件' : '自动联动玄羽问题 2；旧赤潮问题 2 仍只按完整阵与具名支援判定'}。`);
+      } else results.push(`${label} ${p.progress}/3；不增减庚金髓`);
+    }
+
+    function queueRoll(event) { state.pendingRolls.push(event); }
+
+    function renderPendingRoll() {
+      const event = state.pendingRolls[0];
+      if (!event) return '';
+      return `<section class="section" data-testid="dice-panel">
+        <h2>待掷骰：${esc(event.title)}</h2>
+        <p>掷骰前完整公开 1—100 区间。可以用模型随机，也可以输入实体骰结果。</p>
+        ${renderProbabilityBar(event.probs, event.labels)}
+        ${renderRanges(event.probs, event.labels, state.lastRoll)}
+        <div class="dice-box">
+          <div class="dice-controls">
+            <button class="btn safe" type="button" onclick="randomRoll()" data-testid="random-roll">生成 1—100 随机数</button>
+            <div class="field"><label for="manual-roll">手动骰值</label><input id="manual-roll" type="number" min="1" max="100" inputmode="numeric" placeholder="1—100" data-testid="manual-roll"></div>
+            <button class="btn primary" type="button" onclick="manualRoll()" data-testid="submit-roll">记录手动骰</button>
+          </div>
+          ${state.lastRoll ? `<div class="dice-result">骰值 ${state.lastRoll.value} → ${esc(state.lastRoll.label)}</div><p class="cause">骰值落入 ${esc(state.lastRoll.range)}。</p>` : ''}
+        </div>
+      </section>`;
+    }
+
+    function renderProbabilityBar(probs, labels) {
+      return `<div class="probability-bar" aria-label="概率分布">${probs.map((p, i) => p ? `<div class="prob-segment ${probClass(labels[i])}" style="flex:${p}">${esc(labels[i])}<br>${p}%</div>` : '').join('')}</div>`;
+    }
+
+    function probClass(label) {
+      if (/^A|成功|无伤/.test(label)) return 'safe';
+      if (/^B/.test(label)) return 'b';
+      if (/^C|受伤/.test(label)) return 'injured';
+      if (/重伤/.test(label)) return 'severe';
+      return 'dead';
+    }
+
+    function probabilityRanges(probs, labels) {
+      let cursor = 1;
+      return probs.map((p, i) => {
+        if (!p) return { label: labels[i], probability: 0, range: '空区间', min: null, max: null };
+        const min = cursor; const max = cursor + p - 1; cursor = max + 1;
+        return { label: labels[i], probability: p, range: min === max ? `${min}` : `${min}—${max}`, min, max };
+      });
+    }
+
+    function renderRanges(probs, labels, roll) {
+      return `<div class="range-list">${probabilityRanges(probs, labels).map(r => `<span class="range-chip ${roll && r.min && roll.value >= r.min && roll.value <= r.max ? 'hit' : ''}">${esc(r.label)}：${esc(r.range)}（${r.probability}%）</span>`).join('')}</div>`;
+    }
+
+    function randomInt100() {
+      if (window.crypto?.getRandomValues) {
+        const max = 0x100000000 - (0x100000000 % 100);
+        const buf = new Uint32Array(1); let n;
+        do { window.crypto.getRandomValues(buf); n = buf[0]; } while (n >= max);
+        return (n % 100) + 1;
+      }
+      return Math.floor(Math.random() * 100) + 1;
+    }
+
+    function randomRoll() { submitRoll(randomInt100(), '模型随机'); }
+    function manualRoll() {
+      const input = document.getElementById('manual-roll');
+      const value = Number(input?.value);
+      if (!Number.isInteger(value) || value < 1 || value > 100) {
+        if (input) { input.setCustomValidity('请输入 1—100 的整数'); input.reportValidity(); }
+        return;
+      }
+      input.setCustomValidity('');
+      submitRoll(value, '手动输入');
+    }
+
+    function submitRoll(value, method) {
+      const event = state.pendingRolls[0];
+      if (!event || state.gameOver) return;
+      const range = probabilityRanges(event.probs, event.labels).find(r => r.min && value >= r.min && value <= r.max);
+      state.lastRoll = { value, label: range.label, range: `${range.label} ${range.range}`, method };
+      state.lastResolution = { title: event.title, value, label: range.label, range: range.range, method };
+      addLog('掷骰', `${event.title}：${method} ${value} → ${range.label}。`, `骰值落在公开区间 ${range.range}。`);
+      applyRollEvent(event, range.label, value);
+      state.pendingRolls.shift();
+      state.lastRoll = null;
+      if (state.pendingRolls.length) render(); else completePendingPhase();
+    }
+
+    function applyRollEvent(event, label, value) {
+      if (event.type === 'qualification') {
+        const p = state.projects.qualification;
+        p.progress = 0;
+        state.characters.su.currentAction = 'support';
+        if (label === '成功') { p.qualified = true; p.status = 'complete'; }
+        else {
+          p.status = 'failed';
+          if (label.startsWith('受伤')) applyInjury('su', 'injured', `第 ${state.month} 月资格培养失败`);
+          if (label.startsWith('重伤')) applyInjury('su', 'severe', `第 ${state.month} 月资格培养失败`);
+        }
+        addLog(STEP_NAMES.action, `苏砚资格培养结果：${label}${p.qualified ? '，取得硬资格' : '，未取得资格'}。`, `公开概率 70/27/3/0；骰值 ${value}。`);
+      }
+      if (event.type === 'breakthrough') {
+        const p = state.projects.breakthrough;
+        p.progress = 0; state.characters.guiyuan.currentAction = 'support';
+        if (label === '成功') {
+          p.status = 'complete'; p.success = true;
+          if (state.characters.guiyuan.life !== null) state.characters.guiyuan.life += 24;
+          addLog(STEP_NAMES.action, '归元突破成功，寿元 +24 个月。', `当前境界突破成功延寿参数为 +24；骰值 ${value}。`);
+        } else if (label === '受伤') {
+          p.status = 'failed'; applyInjury('guiyuan', 'injured', `第 ${state.month} 月突破失败`);
+        } else if (label === '重伤') {
+          p.status = 'failed'; applyInjury('guiyuan', 'severe', `第 ${state.month} 月突破失败`);
+        } else {
+          p.status = 'failed'; killCharacter('guiyuan', `第 ${state.month} 月突破天劫身死`, state.month);
+        }
+        if (label !== '成功') addLog(STEP_NAMES.action, `归元突破结果：${label}。`, `${tierName(event.data.tier)}公开概率；骰值 ${value}。本月整月仍视为闭关。`);
+      }
+      if (event.type === 'examOutcome') applyExamOutcome(event, label.charAt(0), value);
+      if (event.type === 'examInjury') applyExamInjury(event, label, value);
+    }
+
+    function applyInjury(id, level, cause) {
+      const c = state.characters[id];
+      if (!c.alive) return;
+      c.injury = level;
+      c.rest = level === 'injured' ? 1 : 2;
+      c.injuryCause = cause;
+    }
+
+    function killCharacter(id, cause, month) {
+      const c = state.characters[id];
+      if (!c.alive) return;
+      c.alive = false; c.injury = 'dead'; c.rest = 0; c.deathCause = cause; c.deathMonth = month; c.currentAction = 'support';
+      addLog('人物状态', `${c.name}死亡。`, cause);
+      if (id === 'shen' && state.projects.array.status === 'active') {
+        state.projects.array.status = 'failed';
+        addLog('项目状态', '未完成的护山阵永久失去。', '沈砺死亡；本轮没有同等炼器承接者，也没有可执行图纸规则。');
+      }
+      if (id === 'shen' && state.projects.lootConversion.status === 'active') {
+        state.projects.lootConversion.status = 'failed';
+        addLog('项目状态', '专业战利品转化未完成。', '沈砺死亡；09 没有同等炼器承接者或中途转化保留公式。');
+      }
+      if (id === 'shen' && state.projects.shenLegacy.status === 'active') {
+        const label = state.projects.shenLegacy.kind === 'artifact' ? '镇潮法宝' : '护山阵强化';
+        state.projects.shenLegacy.status = 'failed';
+        addLog('项目状态', `未完成的${label}永久失去。`, '沈砺死亡；连续三月项目未完成，不生成定性成果。');
+      }
+      if (['yue', 'su'].includes(id) && state.projects.guidance.status === 'active') {
+        state.projects.guidance.status = 'failed';
+        if (alive('yue')) state.characters.yue.currentAction = 'support';
+        if (alive('su')) state.characters.su.currentAction = 'support';
+        addLog('项目状态', '岳徊带队／苏砚随行项目未完成。', `${c.name}死亡；不足三个月，不记录“具备带队经历”。`);
+      }
+      if (id === 'yue' && state.projects.routeMap.status === 'active') {
+        state.projects.routeMap.status = 'failed';
+        addLog('项目状态', '未完成的沉锋谷引路图永久失去。', '岳徊死亡；09 没有残图完成度或接续整理公式。');
+      }
+      if (id === 'guiyuan' && state.projects.manual.status === 'active') {
+        state.projects.manual.status = 'failed';
+        addLog('项目状态', '未整理完成的剑典个人理解永久失去。', '归元死亡且残卷缺失比例、补齐公式未定义，本模型不自行生成可用残卷。');
+      }
+      if (id === 'guiyuan' && state.characters.lin.currentAction === 'study_tutor') {
+        state.characters.lin.currentAction = 'support';
+        addLog('规则未定义', '归元亲授因其死亡中止，林砚转为备考支援。', '中途由亲授切换自研的自动换算未单列；已取得的学习单位保留为进度制事实。');
+      }
+    }
+
+    function completePendingPhase() {
+      const phase = state.pendingAfter;
+      state.pendingAfter = null;
+      if (phase === 'action') {
+        state.step = [6, 18].includes(state.month) ? 'exam' : 'end';
+        if (state.step === 'end') addLog('大考检测', '本月无大考，跳过本步。', '大考仅在第 6 月与第 18 月。');
+      } else if (phase === 'exam') finishExamPhase();
+      render();
+    }
+
+    function eligibleFighters() {
+      return Object.keys(CHARACTERS).filter(id => {
+        const c = state.characters[id];
+        if (!c.alive || c.injury === 'severe') return false;
+        if (id === 'guiyuan' && ((state.projects.breakthrough.status === 'active' && isBreakthroughAction(c.currentAction)) || state.projects.breakthrough.completeMonth === state.month)) return false;
+        return true;
+      });
+    }
+
+    function firstDefenseImage() {
+      const array = state.projects.array.status === 'complete';
+      const g = state.characters.guiyuan;
+      const gClosedThisMonth = (state.projects.breakthrough.status === 'active' && isBreakthroughAction(g.currentAction)) || state.projects.breakthrough.completeMonth === state.month;
+      const gCanFight = g.alive && !gClosedThisMonth && g.injury !== 'severe';
+      const gHealthy = gCanFight && g.injury === 'healthy';
+      const support = eligibleFighters().some(id => id !== 'guiyuan' && isHealthy(id));
+      if (array && gHealthy) return { key: 'complete', reason: '护山阵完成，且归元健康、可参战。' };
+      if (array && !gHealthy && support) return { key: 'one', reason: '有阵，但归元受伤或缺席；仍有健康具名支援。' };
+      if (array && (!g.alive || g.injury === 'severe') && !support) return { key: 'two', reason: '有阵，但归元重伤／死亡，且支援不足。' };
+      if (!array && gHealthy) return { key: 'one', reason: '无阵，但归元健康且可参战。' };
+      if (!array && g.alive && g.injury === 'injured' && !gClosedThisMonth) return { key: 'two', reason: '无阵，且归元普通受伤。' };
+      if (!array && (!g.alive || g.injury === 'severe' || gClosedThisMonth)) return { key: 'collapse', reason: `无阵，且归元${!g.alive ? '已死亡' : gClosedThisMonth ? '本月整月闭关' : '重伤'}、无法参战。` };
+      return { key: state.manualFirstImage || null, reason: `有阵，但归元${gClosedThisMonth ? '闭关缺席' : '普通受伤'}且没有健康具名支援；09 未穷尽这个组合，须主持人手动选择四档。`, undefined: true };
+    }
+
+    function adjustedProbabilities(image, wager, posture) {
+      const base = [...BASE_MATRIX[image][wager]];
+      if (posture === 'balanced') return base;
+      let [a, b, c, d] = base;
+      if (posture === 'attack') {
+        if (wager === 'gate') { const moved = Math.min(20, d); d -= moved; c += moved; }
+        if (wager === 'estate') {
+          const moved = Math.min(10, c); c -= moved; b += moved;
+          if (base[3] > 0 && c >= 5) { c -= 5; d += 5; }
+        }
+        if (wager === 'counter' && base[0] > 0) {
+          let need = 15; const fromC = Math.min(need, c); c -= fromC; a += fromC; need -= fromC;
+          const fromB = Math.min(need, b); b -= fromB; a += fromB;
+          if (base[3] > 0 && c >= 5) { c -= 5; d += 5; }
+        }
+      }
+      if (posture === 'defense') {
+        if (wager === 'gate') { const moved = Math.min(10, d); d -= moved; c += moved; }
+        if (wager === 'estate') {
+          const fromD = Math.min(10, d); d -= fromD; c += fromD;
+          const fromB = Math.min(15, b); b -= fromB; c += fromB;
+        }
+      }
+      return [a, b, c, d];
+    }
+
+    function ensureRosterDefaults() {
+      const eligible = eligibleFighters();
+      state.examDraft.roster = state.examDraft.roster.filter(id => eligible.includes(id));
+      if (!state.examDraft.rosterInitialized) {
+        state.examDraft.roster = [...eligible];
+        state.examDraft.rosterInitialized = true;
+      }
+      if (state.examDraft.posture === 'defense' && state.examDraft.wager === 'counter') state.examDraft.wager = 'estate';
+    }
+
+    function updateExamDraft(field, value) {
+      state.examDraft[field] = value;
+      if (field === 'posture' && value === 'defense' && state.examDraft.wager === 'counter') state.examDraft.wager = 'estate';
+      renderAndRefocus(`#${field}`);
+    }
+
+    function toggleRoster(id, checked) {
+      const set = new Set(state.examDraft.roster);
+      checked ? set.add(id) : set.delete(id);
+      state.examDraft.roster = [...set];
+      state.examDraft.rosterInitialized = true;
+      renderAndRefocus(`[data-roster="${id}"]`);
+    }
+
+    function updateManualFact(key, checked) {
+      state.manualFacts[key] = checked;
+      renderAndRefocus(`[data-fact="${key}"]`);
+    }
+
+    function updateFirstImage(value) {
+      state.manualFirstImage = value;
+      if (value) addLog('规则未定义裁决', `第一次大考防务画像人工选择：${IMAGE_NAMES[value]}。`, '当前人物／阵势组合未被 09 的四档定义穷尽。');
+      renderAndRefocus('#manual-first-image');
+    }
+
+    function renderExamStep() {
+      ensureRosterDefaults();
+      return state.month === 6 ? renderFirstExam() : renderSecondExam();
+    }
+
+    function renderFirstExam() {
+      const image = firstDefenseImage();
+      const d = state.examDraft;
+      const probs = image.key ? adjustedProbabilities(image.key, d.wager, d.posture) : null;
+      return `<section class="section" data-testid="exam-step">
+        <h2>${STEP_NAMES.exam}｜第一次赤潮兽灾</h2>
+        <div class="notice ${image.key === 'collapse' ? 'danger' : 'warn'}"><strong>${image.undefined ? '防务画像需人工裁决' : '自动防务画像'}：${image.key ? IMAGE_NAMES[image.key] : '尚未选择'}</strong><p class="cause">${esc(image.reason)}</p></div>
+        ${image.undefined ? `<div class="undefined-rule">该组合未被 09 的四档定义逐字覆盖，模型不猜档。请选择主持人裁决：</div><div class="field"><label for="manual-first-image">手动防务画像</label><select id="manual-first-image" onchange="updateFirstImage(this.value)"><option value="">请选择</option>${['complete','one','two','collapse'].map(key => `<option value="${key}" ${state.manualFirstImage === key ? 'selected' : ''}>${IMAGE_NAMES[key]}</option>`).join('')}</select></div>` : ''}
+        ${renderExamDecisionControls(false)}
+        ${probs ? `<h3>姿态转移后的最终 A/B/C/D</h3>${renderProbabilityBar(probs, ['A', 'B', 'C', 'D'])}${renderRanges(probs, ['A', 'B', 'C', 'D'], null)}<p class="cause">基础行=${IMAGE_NAMES[image.key]}×${WAGER_NAMES[d.wager]}；${postureReason(d.wager, d.posture, BASE_MATRIX[image.key][d.wager])}</p><div class="button-row"><button class="btn primary" type="button" onclick="startExamRoll(false)" data-testid="start-exam-roll">确认押注、姿态与名单，开始掷骰</button></div>` : '<div class="notice danger">先完成防务画像人工裁决，才能查矩阵并掷骰。</div>'}
+      </section>`;
+    }
+
+    function renderExamDecisionControls(isSecond) {
+      const d = state.examDraft;
+      const eligible = eligibleFighters();
+      const wagers = ['gate', 'estate', 'counter'].filter(w => !(d.posture === 'defense' && w === 'counter'));
+      return `<div class="form-grid">
+        <div class="field"><label for="wager">押注</label><select id="wager" onchange="updateExamDraft('wager', this.value)" data-testid="wager">${wagers.map(w => `<option value="${w}" ${d.wager === w ? 'selected' : ''}>${WAGER_NAMES[w]}</option>`).join('')}</select></div>
+        <div class="field"><label for="posture">战略姿态</label><select id="posture" onchange="updateExamDraft('posture', this.value)" data-testid="posture">
+          ${['attack', 'balanced', 'defense'].map(p => `<option value="${p}" ${d.posture === p ? 'selected' : ''}>${POSTURE_NAMES[p]}${p === 'defense' ? '（不能反攻）' : ''}</option>`).join('')}
+        </select></div>
+      </div>
+      <h3>参战名单</h3>
+      <div class="check-grid">${eligible.length ? eligible.map(id => `<label class="check-line"><input type="checkbox" data-roster="${id}" ${d.roster.includes(id) ? 'checked' : ''} onchange="toggleRoster('${id}', this.checked)"><span>${CHARACTERS[id].name}<small>${injuryText(state.characters[id])}；名单不改变结果矩阵，只决定谁掷伤势</small></span></label>`).join('') : '<p>没有可参战的具名人物。</p>'}</div>
+      <p class="subtle">规则未定义参战最少人数，模型允许空名单并照常查防务矩阵。普通伤可参战；重伤、突破闭关者不可参战。</p>`;
+    }
+
+    function postureReason(wager, posture, base) {
+      if (posture === 'balanced') return '攻守兼备，直接使用基础行。';
+      if (posture === 'defense') return wager === 'gate' ? '全力防守：最多 D→C 10 点。' : '全力防守：先最多 D→C 10 点，再最多 B→C 15 点；不能反攻。';
+      if (wager === 'gate') return '全力进攻×守山门：最多 D→C 20 点。';
+      if (wager === 'estate') return '全力进攻×保基业：先最多 C→B 10 点；基础 D>0 且剩余 C≥5 时，再 C→D 5 点。';
+      return base[0] === 0 ? '全力进攻×反攻，但基础 A=0，整段转移（含 C→D）不执行。' : '全力进攻×反攻：先最多 15 点从 C、不足再从 B 转到 A；基础 D>0 时再 C→D 5 点。';
+    }
+
+    function secondExamQuestions() {
+      const branch = state.firstExam?.result === 'A' ? 'xuan' : 'red';
+      const eligible = eligibleFighters();
+      const strongIds = [];
+      if (eligible.includes('guiyuan') && isHealthy('guiyuan')) strongIds.push('guiyuan');
+      if (eligible.includes('lin') && isHealthy('lin') && state.projects.learning.complete) strongIds.push('lin');
+      const namedSupport = eligible.some(id => isHealthy(id));
+      if (branch === 'red') {
+        const q1 = strongIds.length >= 1;
+        const arrayFull = state.projects.array.status === 'complete';
+        const q2 = arrayFull && namedSupport && !(state.firstExam?.result === 'C');
+        const q3 = strongIds.length >= 2 || hasTideArtifact() || state.manualFacts.adaptedArtifact || state.manualFacts.otherMobility;
+        return {
+          branch,
+          questions: [
+            { title: '问题 1 赤鳞妖王', ok: q1, reason: q1 ? `健康完整功法主战者：${strongIds.map(characterName).join('、')}。` : '没有健康、可参战的归元或完全掌握剑典的林砚；半部剑典不算。' },
+            { title: '问题 2 赤鳞妖群', ok: q2, reason: q2 ? '完整护山阵存在，且至少一名健康具名人物可支援。' : state.firstExam?.result === 'C' ? '第一次 C 使阵受损，本轮不可修复，问题 2 必不满足。' : `完整阵=${arrayFull ? '是' : '否'}，具名支援=${namedSupport ? '是' : '否'}。` },
+            { title: '问题 3 反攻能力', ok: q3, reason: `第二强者=${strongIds.length >= 2 ? '是' : '否'}；镇潮法宝=${hasTideArtifact() ? `是（第 ${state.projects.shenLegacy.completeMonth} 月完成）` : '否'}；其他适配法宝=${state.manualFacts.adaptedArtifact ? '手动是' : '否'}；其他机动能力=${state.manualFacts.otherMobility ? '手动是' : '否'}。` }
+          ]
+        };
+      }
+      const q1 = state.projects.breakthrough.success && eligible.includes('guiyuan') && isHealthy('guiyuan');
+      const q2 = state.projects.array.status === 'complete' && (hasEnhancedArray() || state.manualFacts.arrayEnhanced);
+      const mobile = state.manualFacts.secondMobile || hasTideArtifact() || state.manualFacts.adaptedArtifact;
+      const supply = stableSupplyAssessment();
+      const q3 = mobile && supply.ok;
+      const route = routeStatus();
+      return {
+        branch,
+        questions: [
+          { title: '问题 1 玄羽兽王', ok: q1, reason: q1 ? '突破成功的归元健康且可参战，达到高一档正面对抗门槛。' : '本轮实例要求突破成功的归元；模型同时要求其健康、可参战。' },
+          { title: '问题 2 裂空妖群', ok: q2, reason: `完整阵=${state.projects.array.status === 'complete' ? '是' : '否'}；沈砺强化=${hasEnhancedArray() ? `是（第 ${state.projects.shenLegacy.completeMonth} 月完成）` : '否'}；其他强化／改造=${state.manualFacts.arrayEnhanced ? '手动是' : '否'}。未改造旧阵不满足。` },
+          { title: '问题 3 迁徙母巢', ok: q3, reason: `${mobile ? '具备' : '不具备'}“第二名机动强者或适配法宝”（镇潮法宝=${hasTideArtifact() ? '是' : '否'}）；稳定补给=${supply.label}。两者必须兼备。自动读取路线：${route.label}；${supply.reason}` }
+        ]
+      };
+    }
+
+    function imageFromUnmet(unmet) { return ['complete', 'one', 'two', 'collapse'][unmet]; }
+
+    function secondExamAssessment() {
+      const data = secondExamQuestions();
+      const unmet = data.questions.filter(q => !q.ok).length;
+      const baseImage = imageFromUnmet(unmet);
+      const overwhelming = unmet === 0;
+      return { ...data, unmet, baseImage, overwhelming };
+    }
+
+    function overwhelmingProbabilities(wager) {
+      if (wager === 'gate') return [0, 0, 100, 0];
+      if (wager === 'estate') return [0, 100, 0, 0];
+      return [90, 10, 0, 0];
+    }
+
+    function renderSecondExam() {
+      const assessment = secondExamAssessment();
+      const d = state.examDraft;
+      const probs = assessment.overwhelming ? overwhelmingProbabilities(d.wager) : adjustedProbabilities(assessment.baseImage, d.wager, d.posture);
+      const required = d.wager === 'counter' ? [0, 1, 2] : [0, 1];
+      const missingRequired = required.filter(i => !assessment.questions[i].ok);
+      return `<section class="section" data-testid="exam-step">
+        <h2>${STEP_NAMES.exam}｜${assessment.branch === 'red' ? '同强度赤潮复现' : '玄羽兽潮'}</h2>
+        <p>${assessment.branch === 'red' ? '第一次结果为 B/C，旧问题按原强度重新集聚。' : '第一次结果为 A，旧巢已毁，本次进入更强异型兽潮。'}</p>
+        ${renderManualFactControls(assessment.branch)}
+        <div class="question-list">${assessment.questions.map(q => `<div class="question-row"><strong>${q.title}</strong><strong class="${q.ok ? 'yes' : 'no'}">${q.ok ? '满足' : '不满足'}</strong><div class="cause">${esc(q.reason)}</div></div>`).join('')}</div>
+        <div class="notice ${assessment.overwhelming ? 'safe' : 'warn'}"><strong>未满足 ${assessment.unmet} 问 → ${assessment.overwhelming ? IMAGE_NAMES.overwhelming : IMAGE_NAMES[assessment.baseImage]}</strong><p class="cause">0/1/2/3 个未满足依次映射防务完备/一处缺口/两处缺口/濒临崩溃；三问全满足时按 D-64 进入压倒性判定。</p></div>
+        ${renderExamDecisionControls(true)}
+        <div class="notice ${missingRequired.length ? 'danger' : 'safe'}"><strong>押注映射校验：${missingRequired.length ? '有目标问题未满足' : '目标所需问题均满足'}</strong><p class="cause">${WAGER_NAMES[d.wager]}需要问题 1、2${d.wager === 'counter' ? '、3' : ''}；校验只公开风险，不禁止玩家押注。</p></div>
+        <h3>${assessment.overwhelming ? '压倒性优势公开行' : '姿态转移后的最终 A/B/C/D'}</h3>
+        ${renderProbabilityBar(probs, ['A', 'B', 'C', 'D'])}
+        ${renderRanges(probs, ['A', 'B', 'C', 'D'], null)}
+        <p class="cause">${assessment.overwhelming ? '守山门固定 C 100%；保基业固定 B 100%；反攻 A/B=90/10。压倒性档不再套姿态转移。' : `基础行=${IMAGE_NAMES[assessment.baseImage]}×${WAGER_NAMES[d.wager]}；${postureReason(d.wager, d.posture, BASE_MATRIX[assessment.baseImage][d.wager])}`}</p>
+        <div class="button-row"><button class="btn primary" type="button" onclick="startExamRoll(true)" data-testid="start-exam-roll">确认三问、押注、姿态与名单，开始掷骰</button></div>
+      </section>`;
+    }
+
+    function renderManualFactControls(branch) {
+      const auto = `<div class="notice safe"><strong>自动读取已完成事实：</strong>镇潮法宝=${hasTideArtifact() ? `是（第 ${state.projects.shenLegacy.completeMonth} 月）` : '否'}；强化护山阵=${hasEnhancedArray() ? `是（第 ${state.projects.shenLegacy.completeMonth} 月）` : '否'}；通路=${esc(routeStatus().label)}；稳定补给判据=${esc(stableSupplyAssessment().label)}。</div>`;
+      if (branch === 'red') return `${auto}<div class="undefined-rule"><strong>其他来源仍由主持人手动输入：</strong>09 没有给通用的其他法宝／机动能力生产工期与材料，不自动发明。</div>
+        <div class="check-grid">
+          ${manualFactCheck('adaptedArtifact', '已有其他适配法宝', '沈砺完成的镇潮法宝已自动读取')}
+          ${manualFactCheck('otherMobility', '已有其他机动追击能力', '具体门槛未定义')}
+        </div>`;
+      return `${auto}<div class="undefined-rule"><strong>其他来源与 OQ-5 仍由主持人手动输入：</strong>其他阵改造、机动强者、其他适配法宝、稳定通路的通用阈值未写明。带队经历与引路图只作为公开事实，不自动宣告“稳定引路者”。</div>
+        <div class="check-grid">
+          ${manualFactCheck('arrayEnhanced', '护山阵由其他来源强化／改造', '沈砺完成的强化阵已自动读取')}
+          ${manualFactCheck('secondMobile', '已有第二名机动强者', '谁算“机动”未定义')}
+          ${manualFactCheck('adaptedArtifact', '已有其他适配法宝', '与第二机动强者或镇潮法宝三选一')}
+          ${manualFactCheck('stableSupply', '主持人确认稳定资源补给通路', 'OQ-5：苏砚成熟／稳定引路标准未定义')}
+        </div>`;
+    }
+
+    function manualFactCheck(key, label, note) {
+      return `<label class="check-line"><input type="checkbox" data-fact="${key}" ${state.manualFacts[key] ? 'checked' : ''} onchange="updateManualFact('${key}', this.checked)"><span>${label}<small>${note}</small></span></label>`;
+    }
+
+    function startExamRoll(isSecond) {
+      if (state.step !== 'exam' || state.pendingRolls.length || state.gameOver) return;
+      const d = clone(state.examDraft);
+      let image, probs, overwhelming = false, branch = 'red';
+      if (!isSecond) {
+        const assessment = firstDefenseImage(); image = assessment.key;
+        if (!image) return;
+        probs = adjustedProbabilities(image, d.wager, d.posture);
+      } else {
+        const assessment = secondExamAssessment(); image = assessment.baseImage; branch = assessment.branch; overwhelming = assessment.overwhelming;
+        probs = overwhelming ? overwhelmingProbabilities(d.wager) : adjustedProbabilities(image, d.wager, d.posture);
+        addLog(STEP_NAMES.exam, `二考三问：${assessment.questions.map(q => `${q.title.replace(/^问题 \d /, '')}=${q.ok ? '满足' : '不满足'}`).join('；')}；未满足 ${assessment.unmet} 问。`, `映射为${overwhelming ? '压倒性优势' : IMAGE_NAMES[image]}。自动事实：镇潮法宝=${hasTideArtifact()}，强化阵=${hasEnhancedArray()}，带队经历=${state.projects.guidance.status === 'complete'}，完整引路图=${state.projects.routeMap.status === 'complete'}；手动事实：${JSON.stringify(state.manualFacts)}。`);
+      }
+      const decision = `${isSecond ? '第二次' : '第一次'}大考：${WAGER_NAMES[d.wager]}×${POSTURE_NAMES[d.posture]}；参战=${d.roster.map(characterName).join('、') || '空名单'}`;
+      addDecision(decision);
+      addLog(STEP_NAMES.exam, decision + '。', `名单只决定逐人伤势，不修改 A/B/C/D；最终概率 ${probs.join('/')}。`);
+      state.pendingAfter = 'exam';
+      queueRoll({ type: 'examOutcome', title: `${isSecond ? '第二次' : '第一次'}大考 A/B/C/D`, probs, labels: ['A', 'B', 'C', 'D'], data: { isSecond, image, overwhelming, branch, draft: d } });
+      state.lastRoll = null;
+      render();
+    }
+
+    function applyExamOutcome(event, result, value) {
+      const d = event.data.draft;
+      const examRecord = { result, image: event.data.image, overwhelming: event.data.overwhelming, branch: event.data.branch, wager: d.wager, posture: d.posture, roster: [...d.roster], roll: value, injuries: [] };
+      if (event.data.isSecond) state.secondExam = examRecord; else state.firstExam = examRecord;
+      addLog(STEP_NAMES.exam, `${event.data.isSecond ? '第二次' : '第一次'}大考结果：${RESULT_NAMES[result]}。`, `骰值 ${value} 落入 ${result} 区间；画像=${event.data.overwhelming ? IMAGE_NAMES.overwhelming : IMAGE_NAMES[event.data.image]}。`);
+      if (!event.data.isSecond) applyFirstExamConsequences(result);
+      const injuryProbs = event.data.overwhelming ? OVERWHELMING_INJURY[d.posture] : INJURY_TABLE[d.posture][result];
+      if (!event.data.isSecond && result === 'D') {
+        state.terminalKind = 'firstD';
+        state.terminalReason = `第一次大考骰值 ${value} 得 D，山门陷落。试玩协议允许玩家自行决定是否重掷一次；模型保留原始结果，不自动重掷。`;
+        addLog(STEP_NAMES.exam, 'D 结果立即进入终局，不再排队逐人伤势骰。', '用户任务明确 D=立即终局；D 伤势表仍在公开规则表中保留原始数字。');
+        return;
+      }
+      d.roster.filter(id => alive(id)).forEach(id => {
+        if (!injuryProbs) return;
+        queueRoll({ type: 'examInjury', title: `${characterName(id)}参战伤势｜${POSTURE_NAMES[d.posture]}×${RESULT_NAMES[result]}`, probs: injuryProbs, labels: ['无伤', '受伤', '重伤', '死亡／失踪'], data: { id, isSecond: event.data.isSecond, examResult: result, overwhelming: event.data.overwhelming } });
+      });
+      if (!d.roster.length) addLog(STEP_NAMES.exam, '参战名单为空，不进行具名人物伤势骰。', '09 未定义最少参战人数；模型不补规则。');
+    }
+
+    function applyFirstExamConsequences(result) {
+      if (result === 'A') { state.rewardTiers = 3; }
+      if (result === 'B') { state.rewardTiers = 2; }
+      if (result === 'C') {
+        state.rewardTiers = 0; state.externalAssets = false;
+        if (state.projects.array.status === 'complete') state.projects.array.status = 'damaged';
+        addLog(STEP_NAMES.exam, `C：外部产业全部失去；${state.projects.array.status === 'damaged' ? '已完成护山阵受损且本轮不可修复' : '本局没有已完成护山阵可进入受损状态'}。`, 'C 无正向资源兑现；受损阵在第二次大考问题 2 计不满足。');
+      }
+      if (result === 'A' || result === 'B') addLog(STEP_NAMES.exam, `${result}：写入第 1、2 层${result === 'A' ? '与第 3 层' : ''}定性战利品标签。`, '具体名称、数量、比例和兑换公式待定，模型不转成通用货币。');
+    }
+
+    function applyExamInjury(event, label, value) {
+      const id = event.data.id;
+      const record = event.data.isSecond ? state.secondExam : state.firstExam;
+      record.injuries.push({ id, label, roll: value });
+      if (label === '受伤') applyInjury(id, 'injured', `第 ${state.month} 月大考`);
+      if (label === '重伤') applyInjury(id, 'severe', `第 ${state.month} 月大考`);
+      if (label === '死亡／失踪') killCharacter(id, `第 ${state.month} 月大考死亡／失踪`, state.month);
+      addLog(STEP_NAMES.exam, `${characterName(id)}伤势：${label}。`, `逐人使用${event.data.overwhelming ? '压倒性优势专用' : '姿态×结果'}伤势表；骰值 ${value}。`);
+    }
+
+    function finishExamPhase() {
+      if (state.terminalKind === 'firstD') {
+        state.gameOver = true;
+        addLog('终局', '第一次大考 D，山门陷落，本局立即结束。', 'D 不进入第 9 月交接；试玩协议允许玩家自行决定是否另行重掷一次。');
+        return;
+      }
+      state.step = 'end';
+    }
+
+    function renderEndStep() {
+      const willExpire = Object.values(state.characters).filter(c => c.alive && c.life === 1);
+      return `<section class="section" data-testid="end-step">
+        <h2>${STEP_NAMES.end}</h2>
+        <p>本步只扣减仍在世人物的当月寿元。${willExpire.length ? `${willExpire.map(c => c.name).join('、')}将扣至 0，并在下月寿命检测死亡。` : ''}</p>
+        <div class="button-row"><button class="btn primary" type="button" onclick="confirmMonthEnd()" data-testid="confirm-end">确认月末结算${state.month === 18 ? '并生成终局总结' : ''}</button></div>
+        <p class="cause">寿元扣减明确发生在大考检测之后；本按钮有步骤锁，不会重复扣减。</p>
+      </section>`;
+    }
+
+    function confirmMonthEnd() {
+      if (state.step !== 'end' || state.gameOver) return;
+      const changes = [];
+      Object.values(state.characters).forEach(c => {
+        if (!c.alive || c.life === null) return;
+        c.life = Math.max(0, c.life - 1);
+        changes.push(`${c.name} ${c.life}`);
+      });
+      addLog(STEP_NAMES.end, `扣减寿元：${changes.length ? changes.join('；') : '本局未给寿尽月的人物不扣显示数值'}。`, '月末统一 -1；扣到 0 的人物在下月寿命检测才死亡。');
+      if (state.month === 9 && !state.handover) {
+        state.handover = generateHandover();
+        addLog('第 9 月交接卡', '自动生成五栏盘点。', '每项只落一栏，并标出由哪月决定或大考结果造成。');
+      }
+      if (state.month === 18) {
+        state.gameOver = true; state.terminalKind = 'month18';
+        state.terminalReason = `第二次大考结果为 ${RESULT_NAMES[state.secondExam?.result] || '未记录'}；第 18 月月末寿元已扣减，十八个月闭环停止。`;
+        addLog('终局', state.terminalReason, '本纸面实例不继续第三代。');
+      } else {
+        state.month += 1; state.step = 'life'; state.examDraft = { wager: 'estate', posture: 'balanced', roster: [], rosterInitialized: false }; state.actionError = ''; state.actionDraft = {}; state.soloYieldDraft = 0;
+      }
+      render();
+    }
+
+    function generateHandover() {
+      const columns = { living: [], permanent: [], knowledge: [], unfinished: [], lost: [] };
+      Object.values(state.characters).forEach(c => {
+        if (c.alive) {
+          const causes = [`第 1—${state.month} 月寿元与伤势结算`, `最近安排决定在第 ${c.lastDecisionMonth || 1} 月`];
+          if (state.pillUse?.id === c.id) causes.push(`第 ${state.pillUse.month} 月延寿丹 +12`);
+          if (c.id === 'guiyuan' && state.projects.breakthrough.success) causes.push(`第 ${state.projects.breakthrough.completeMonth} 月突破成功 +24`);
+          columns.living.push({ text: `${c.name}：${lifeText(c)}，${injuryText(c)}${c.id === 'su' ? `，资格=${state.projects.qualification.qualified ? '合格' : '未合格'}，带队经历=${state.projects.guidance.status === 'complete' ? '已完成三个月' : '未形成完整事实'}` : ''}`, cause: causes.join('；') + '。' });
+        }
+      });
+      if (state.projects.array.status === 'complete' || state.projects.array.status === 'damaged') columns.permanent.push({ text: `护山阵：${state.projects.array.status === 'damaged' ? '受损，本轮不可修' : '完整'}`, cause: `第 ${state.projects.array.completeMonth} 月由沈砺完成${state.projects.array.status === 'damaged' ? '；第 6 月 C 使其受损' : ''}。` });
+      columns.permanent.push({ text: `库存庚金髓 ${state.resources.gengjin} 份`, cause: state.resourceEvents.map(e => `${e.month ? `第 ${e.month} 月${e.cause}` : e.cause}${e.delta > 0 ? '+' : ''}${e.delta}`).join('；') + '。' });
+      if (state.externalAssets) columns.permanent.push({ text: '外部产业完整', cause: `第 6 月第一次大考结果 ${state.firstExam?.result || '未记录'}。` });
+      if (state.rewardTiers) columns.permanent.push({ text: `大考战利品定性标签：第 1—${state.rewardTiers} 层`, cause: `第 6 月 ${state.firstExam.result}；具体数量与兑换规则未定义。` });
+      if (state.projects.lootConversion.status === 'complete') columns.permanent.push({ text: '已转化专业战利品', cause: `沈砺第 ${state.projects.lootConversion.startMonth}—${state.projects.lootConversion.completeMonth} 月连续转化；不增减庚金髓数字。` });
+      if (hasTideArtifact()) columns.permanent.push({ text: '镇潮法宝', cause: `沈砺第 ${state.projects.shenLegacy.startMonth}—${state.projects.shenLegacy.completeMonth} 月炼制；自动联动第二次大考问题 3 的法宝条件。` });
+      if (hasEnhancedArray()) columns.permanent.push({ text: '强化护山阵', cause: `沈砺第 ${state.projects.shenLegacy.startMonth}—${state.projects.shenLegacy.completeMonth} 月强化；自动联动玄羽问题 2，旧赤潮不额外加成。` });
+      if (state.projects.manual.status === 'complete') columns.knowledge.push({ text: '完整《归元剑典》', cause: `归元第 ${state.projects.manual.startMonth}—${state.projects.manual.completeMonth} 月整理；后人仍须学习。` });
+      if (state.projects.routeMap.status === 'complete') columns.knowledge.push({ text: '完整沉锋谷引路图', cause: `岳徊第 ${state.projects.routeMap.startMonth}—${state.projects.routeMap.completeMonth} 月连续整理；地图不替代硬资格或个人熟练度。` });
+      if (!state.projects.qualification.qualified && alive('su') && state.projects.qualification.attempts === 1 && state.projects.qualification.status === 'failed') columns.unfinished.push({ text: '苏砚硬资格二培', cause: `第一次培养在第 ${state.projects.qualification.completeMonth} 月失败；第 10 月起可再投 3 份、连续 3 月。` });
+      if (!state.projects.qualification.qualified && alive('su') && state.projects.qualification.status === 'active') columns.unfinished.push({ text: `苏砚首次硬资格培养 ${state.projects.qualification.progress}/3`, cause: `第 ${state.projects.qualification.startMonth} 月首次开工并投入 3 份；苏砚仍在世，原安排自动续。` });
+      if (state.projects.array.status === 'active' && alive('shen')) columns.unfinished.push({ text: `护山阵 ${state.projects.array.progress}/3`, cause: `第 ${state.projects.array.startMonth} 月开工；沈砺仍在世，原安排可续。` });
+      if (state.projects.manual.status === 'active' && alive('guiyuan')) columns.unfinished.push({ text: `剑典整理 ${state.projects.manual.progress}/3`, cause: `第 ${state.projects.manual.startMonth} 月开始；归元仍在世，原安排可续。` });
+      if (state.projects.breakthrough.status === 'active' && alive('guiyuan')) columns.unfinished.push({ text: `归元突破 ${state.projects.breakthrough.progress}/3（${tierName(state.projects.breakthrough.tier)}）`, cause: `第 ${state.projects.breakthrough.startMonth} 月开始；归元仍在世，原安排自动续。` });
+      if (state.projects.guidance.status === 'active' && alive('yue') && alive('su')) columns.unfinished.push({ text: `岳徊带队／苏砚随行 ${state.projects.guidance.progress}/3`, cause: `第 ${state.projects.guidance.startMonth} 月开始；完成前不记录带队经历。` });
+      if (state.projects.routeMap.status === 'active' && alive('yue')) columns.unfinished.push({ text: `沉锋谷引路图 ${state.projects.routeMap.progress}/3`, cause: `第 ${state.projects.routeMap.startMonth} 月开始；整理期间不采集。` });
+      if (state.projects.lootConversion.status === 'active' && alive('shen')) columns.unfinished.push({ text: `专业战利品转化 ${state.projects.lootConversion.progress}/3`, cause: `第 ${state.projects.lootConversion.startMonth} 月开始；不改庚金髓数字。` });
+      if (state.projects.shenLegacy.status === 'active' && alive('shen')) columns.unfinished.push({ text: `${state.projects.shenLegacy.kind === 'artifact' ? '镇潮法宝' : '护山阵强化'} ${state.projects.shenLegacy.progress}/3`, cause: `第 ${state.projects.shenLegacy.startMonth} 月开始；连续三月完成后才生成成果。` });
+      if (!alive('yue') && state.projects.routeMap.status !== 'complete') columns.lost.push({ text: '岳徊个人沉锋谷路线经验', cause: `岳徊第 ${state.characters.yue.deathMonth} 月死亡；完整引路图未完成${state.projects.guidance.status === 'complete' ? '，苏砚的三个月带队经历仍作为其个人事实保留' : ''}。` });
+      if (!alive('shen')) columns.lost.push({ text: '沈砺个人炼器熟练度与专业加工能力', cause: `沈砺第 ${state.characters.shen.deathMonth} 月死亡；死亡不产生传承。` });
+      if (!alive('guiyuan')) columns.lost.push({ text: '归元个人战力与未外化理解', cause: `归元第 ${state.characters.guiyuan.deathMonth} 月死亡；${state.projects.manual.status === 'complete' ? '完整剑典已另列可携知识' : '未完成整理没有可执行补齐公式'}。` });
+      if (!alive('lin')) columns.lost.push({ text: '林砚已学但未外化的个人内容', cause: `林砚第 ${state.characters.lin.deathMonth} 月死亡；功法文本若存在仍单列可携知识，但本轮不自动生成新人。` });
+      if (!alive('su')) columns.lost.push({ text: '苏砚个人资格与秘境熟练度', cause: `苏砚第 ${state.characters.su.deathMonth} 月死亡；本轮不自动出现第二名稀有适配者。` });
+      if (!state.externalAssets) columns.lost.push({ text: '全部外部产业', cause: '第 6 月第一次大考 C“山门独存”。' });
+      if (state.projects.array.status === 'failed') columns.lost.push({ text: '未完成护山阵', cause: '沈砺死亡且无同等承接者／可执行图纸。' });
+      return columns;
+    }
+
+    function renderHandover() {
+      if (!state.handover) return '';
+      const titles = { living: '在世人物', permanent: '永久成果', knowledge: '可携知识', unfinished: '可接续未竟事业', lost: '永久失去' };
+      const grid = card => `<div class="handover-grid">${Object.entries(titles).map(([key, title]) => `<div class="handover-column"><h3>${title}</h3>${card[key].length ? `<ul>${card[key].map(item => `<li>${esc(item.text)}<div class="cause">${esc(item.cause)}</div></li>`).join('')}</ul>` : '<p class="subtle">本栏无项目。</p>'}</div>`).join('')}</div>`;
+      const later = state.month > 9 ? `<h3>第 10 月后续盘｜当前事实</h3>${grid(generateHandover())}<p class="cause">后续盘读取带队经历、完整引路图、战利品转化与阵器成果；不倒改第 9 月历史卡。</p>` : '';
+      return `<section class="section" data-testid="handover"><h2>第 9 月交接卡｜五栏事实盘点</h2>${grid(state.handover)}<p class="cause">交接不计算统一总分；人物死亡不自动转化为宗门底蕴。</p>${later}</section>`;
+    }
+
+    function renderTerminal() {
+      const resultLine = state.terminalKind === 'firstD' ? '第 6 月山门陷落' : `十八个月完成，二考 ${RESULT_NAMES[state.secondExam?.result] || '未记录'}`;
+      const alivePeople = Object.values(state.characters).filter(c => c.alive).map(c => `${c.name}（${lifeText(c)}，${injuryText(c)}）`).join('、') || '无';
+      const route = routeStatus();
+      const laterFacts = [
+        `带队经历=${state.projects.guidance.status === 'complete' ? `有（第 ${state.projects.guidance.completeMonth} 月）` : '无'}`,
+        `完整引路图=${state.projects.routeMap.status === 'complete' ? `有（第 ${state.projects.routeMap.completeMonth} 月）` : '无'}`,
+        `专业战利品转化=${state.projects.lootConversion.status === 'complete' ? `完成（第 ${state.projects.lootConversion.completeMonth} 月）` : '未完成'}`,
+        `镇潮法宝=${hasTideArtifact() ? '有' : '无'}`,
+        `强化护山阵=${hasEnhancedArray() ? '有' : '无'}`
+      ].join('；');
+      return `<section class="terminal" data-testid="terminal">
+        <p class="eyebrow">终局总结</p><h2>${esc(resultLine)}</h2>
+        <p>${esc(state.terminalReason)}</p>
+        ${state.terminalKind === 'firstD' ? '<div class="notice warn">试玩协议：第一次大考 D 允许重掷一次并记录原始结果。是否重掷由玩家自行决定，本模型不覆盖当前记录。</div>' : ''}
+        <p><strong>终局在世：</strong>${esc(alivePeople)}</p>
+        <p><strong>最终成果：</strong>庚金髓 ${state.resources.gengjin} 份；护山阵 ${esc(projectProgressText(state.projects.array, 3))}；剑典 ${esc(projectProgressText(state.projects.manual, 3))}；林砚研习 ${state.projects.learning.units}/12。</p>
+        <p><strong>第二代事实：</strong>${esc(laterFacts)}。</p>
+        <p><strong>沉锋谷通路：</strong>${esc(route.label)}。${esc(route.reason)}</p>
+        <p><strong>第一次大考：</strong>${state.firstExam ? `${RESULT_NAMES[state.firstExam.result]}，${WAGER_NAMES[state.firstExam.wager]}×${POSTURE_NAMES[state.firstExam.posture]}` : '未发生'}。</p>
+        <p><strong>第二次大考：</strong>${state.secondExam ? `${RESULT_NAMES[state.secondExam.result]}，${state.secondExam.branch === 'xuan' ? '玄羽兽潮' : '同强度赤潮'}，${WAGER_NAMES[state.secondExam.wager]}×${POSTURE_NAMES[state.secondExam.posture]}` : '未进入'}。</p>
+        <h3>关键决定回顾</h3><ol class="decision-timeline">${state.decisions.map(d => `<li>第 ${d.month} 月：${esc(d.text.replace(/^第 \d+ 月/, ''))}</li>`).join('')}</ol>
+        <p class="cause">终局只回顾可追溯事实，不给最优路线或推荐答案。</p>
+      </section>`;
+    }
+
+    function renderReferenceTables() {
+      const matrixRows = Object.keys(BASE_MATRIX).flatMap(image => Object.keys(BASE_MATRIX[image]).map(wager => `<tr><td>${IMAGE_NAMES[image]}</td><td>${WAGER_NAMES[wager]}</td>${BASE_MATRIX[image][wager].map(v => `<td class="num">${v}%</td>`).join('')}</tr>`)).join('');
+      const injuryRows = Object.entries(INJURY_TABLE).flatMap(([posture, results]) => Object.entries(results).map(([result, probs]) => `<tr><td>${POSTURE_NAMES[posture]}</td><td>${result}</td>${probs.map(v => `<td class="num">${v}%</td>`).join('')}</tr>`)).join('');
+      return `<section class="section"><details><summary>全部公开规则表：突破、资格、基础矩阵、姿态、伤势</summary>
+        <h3>突破三档</h3><div class="table-wrap"><table><thead><tr><th>准备</th><th class="num">成功</th><th class="num">受伤</th><th class="num">重伤</th><th class="num">死亡</th></tr></thead><tbody>
+          <tr><td>充分</td><td class="num">90%</td><td class="num">9%</td><td class="num">1%</td><td class="num">0%</td></tr>
+          <tr><td>尚可</td><td class="num">70%</td><td class="num">26%</td><td class="num">3%</td><td class="num">1%</td></tr>
+          <tr><td>勉强</td><td class="num">50%</td><td class="num">40%</td><td class="num">5%</td><td class="num">5%</td></tr>
+        </tbody></table></div>
+        <p>苏砚资格：成功 70%／受伤且失败 27%／重伤且失败 3%／死亡 0%。</p>
+        <h3>D-42 伤势与心境数字</h3>
+        <p>普通受伤：战斗／修炼／生产能力约 75%，休养 1 个月恢复。重伤：战斗能力约 40%，修炼与生产能力约 50%，不能突破或单独进入高风险秘境，休养 2 个月恢复。</p>
+        <p>心境使用 1—5：1 低迷、2—4 平稳、5 澄明；连续修炼 3 个月 -1，连续高压生产 3 个月 -1，连续云游 3 个月 +2（上限 5），突破失败或重伤即时 -1，普通休养不自动提升；澄明使突破准备档 +1，低迷 -1。</p>
+        <div class="undefined-rule">本局没有给五人的初始心境，也没有给本任务行动菜单中的“云游／高压生产”判定，因此 v1 只原样公开这些数字，不擅自初始化心境或改写玩家直接选择的突破档。</div>
+        <h3>攻守兼备基础矩阵</h3><div class="table-wrap"><table><thead><tr><th>画像</th><th>押注</th><th class="num">A</th><th class="num">B</th><th class="num">C</th><th class="num">D</th></tr></thead><tbody>${matrixRows}</tbody></table></div>
+        <h3>姿态转移</h3><ul>
+          <li>全力进攻×守：最多 D→C 20。</li><li>全力进攻×保：最多 C→B 10；基础 D&gt;0 且剩余 C≥5，再 C→D 5。</li>
+          <li>全力进攻×反：基础 A&gt;0 才整段执行；最多 15 先 C 后 B 转 A；基础 D&gt;0 再 C→D 5。基础 A=0 整段不执行。</li>
+          <li>全力防守不能反攻；守最多 D→C 10；保先 D→C 10，再 B→C 15。</li>
+        </ul>
+        <h3>每名具名参战者伤势</h3><div class="table-wrap"><table><thead><tr><th>姿态</th><th>结果</th><th class="num">无伤</th><th class="num">受伤</th><th class="num">重伤</th><th class="num">死亡／失踪</th></tr></thead><tbody>${injuryRows}</tbody></table></div>
+        <p>压倒性伤势：全攻 75/23/2/0，攻守兼备 90/9/1/0，全防沿用第一次全防 B 的 85/14/1/0。</p>
+      </details></section>`;
+    }
+
+    function renderMain() {
+      const active = state.gameOver ? renderTerminal() : `${renderStepRibbon()}${renderPublicPanel()}${state.step === 'life' ? renderLifeStep() : ''}${state.step === 'action' && !state.pendingRolls.length ? renderActionStep() : ''}${state.step === 'exam' && !state.pendingRolls.length ? renderExamStep() : ''}${state.pendingRolls.length ? renderPendingRoll() : ''}${state.step === 'end' ? renderEndStep() : ''}`;
+      return `${active}${renderHandover()}${renderReferenceTables()}`;
+    }
+
+    function renderLogs() {
+      const box = document.getElementById('log-box');
+      if (!box) return;
+      box.innerHTML = state.logs.length ? state.logs.map(entry => `<article class="log-entry"><time>第 ${entry.month} 月 · ${esc(entry.step)}</time><p>${esc(entry.text)}</p>${entry.reason ? `<div class="cause">${esc(entry.reason)}</div>` : ''}</article>`).join('') : '<div class="log-empty">尚无记录。</div>';
+    }
+
+    function render() {
+      document.getElementById('header-month').textContent = state.gameOver ? '局面结束' : `第 ${state.month} 月`;
+      document.getElementById('main-content').innerHTML = renderMain();
+      renderLogs();
+    }
+
+    function renderAndRefocus(selector) {
+      render();
+      requestAnimationFrame(() => document.querySelector(selector)?.focus());
+    }
+
+    function exportText() {
+      const lines = ['两代接力局面｜最小表格模型 v1.1', `导出时状态：第 ${state.month} 月${state.gameOver ? '，已终局' : `，${STEP_NAMES[state.step]}`}`, ''];
+      state.logs.forEach(e => {
+        lines.push(`【第 ${e.month} 月·${e.step}】${e.text}`);
+        if (e.reason) lines.push(`原因：${e.reason}`);
+      });
+      lines.push('', '关键决定回顾');
+      state.decisions.forEach(d => lines.push(`- 第 ${d.month} 月：${d.text}`));
+      if (state.handover) {
+        lines.push('', '第 9 月交接卡');
+        const titles = { living: '在世人物', permanent: '永久成果', knowledge: '可携知识', unfinished: '可接续未竟事业', lost: '永久失去' };
+        Object.entries(titles).forEach(([key, title]) => {
+          lines.push(`[${title}]`);
+          state.handover[key].forEach(item => lines.push(`- ${item.text}｜归因：${item.cause}`));
+        });
+        if (state.month > 9) {
+          lines.push('', '第 10 月后续盘（当前事实）');
+          const current = generateHandover();
+          Object.entries(titles).forEach(([key, title]) => {
+            lines.push(`[${title}]`);
+            current[key].forEach(item => lines.push(`- ${item.text}｜归因：${item.cause}`));
+          });
+        }
+      }
+      const route = routeStatus();
+      lines.push('', '第二代自动事实');
+      lines.push(`- 苏砚三个月带队经历：${state.projects.guidance.status === 'complete' ? `是，第 ${state.projects.guidance.completeMonth} 月完成` : '否'}`);
+      lines.push(`- 完整引路图：${state.projects.routeMap.status === 'complete' ? `是，第 ${state.projects.routeMap.completeMonth} 月完成` : '否'}`);
+      lines.push(`- 已转化专业战利品：${state.projects.lootConversion.status === 'complete' ? `是，第 ${state.projects.lootConversion.completeMonth} 月完成` : '否'}`);
+      lines.push(`- 镇潮法宝：${hasTideArtifact() ? `是，第 ${state.projects.shenLegacy.completeMonth} 月完成` : '否'}`);
+      lines.push(`- 强化护山阵：${hasEnhancedArray() ? `是，第 ${state.projects.shenLegacy.completeMonth} 月完成` : '否'}`);
+      lines.push(`- 通路状态：${route.label}｜原因：${route.reason}`);
+      lines.push('', '规则未定义人工事实', JSON.stringify(state.manualFacts));
+      return lines.join('\n');
+    }
+
+    function setExportStatus(text) { document.getElementById('export-status').textContent = text; }
+
+    async function copyLog() {
+      const text = exportText();
+      try {
+        await navigator.clipboard.writeText(text);
+        setExportStatus('记录已复制到剪贴板。');
+      } catch (_) {
+        const area = document.createElement('textarea'); area.value = text; area.style.position = 'fixed'; area.style.opacity = '0';
+        document.body.appendChild(area); area.select();
+        const ok = document.execCommand('copy'); area.remove();
+        setExportStatus(ok ? '记录已复制到剪贴板。' : '浏览器禁止剪贴板访问，请使用“下载 txt”。');
+      }
+    }
+
+    function downloadLog() {
+      const blob = new Blob([exportText()], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob); const link = document.createElement('a');
+      link.href = url; link.download = `两代接力局面-第${state.month}月记录.txt`; document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0); setExportStatus('txt 记录已生成。');
+    }
+
+    function resetGame() {
+      if (!window.confirm('确认清空当前十八个月记录并重新开始？')) return;
+      state = initialState(); initialize();
+    }
+
+    window.__round2Test = {
+      getState: () => clone(state),
+      setManualFact: (key, value) => { if (key in state.manualFacts) { state.manualFacts[key] = Boolean(value); render(); } },
+      adjustedProbabilities: (image, wager, posture) => adjustedProbabilities(image, wager, posture),
+      actionOptions: id => clone(actionOptions(id)),
+      secondExamQuestions: () => clone(secondExamQuestions()),
+      routeStatus: () => clone(routeStatus()),
+      stableSupplyAssessment: () => clone(stableSupplyAssessment()),
+      generateHandover: () => clone(generateHandover()),
+      exportText
+    };
+
+    initialize();
+  </script>
+</body>
+</html>
