@@ -1,22 +1,9 @@
-# 历史材料归档
+# 历史试验资料归档
 
-状态：Archived
+状态：Experimental Archive / 不再作为参考
 
-这里保存本轮整理前的原始文件。归档的目的有两个：保留研究和决策演变的可追溯性，同时阻止过时方案继续指导项目。
+本目录中的全部文件，无论文件自身写着 Current、Confirmed、Decision 或 Approved，均已失去当前设计效力。它们只用于追溯项目曾经做过哪些试验，不得作为新规格、数值、人物、事件、技术选型或实施计划的输入。
 
-归档文件保持原文，不代表其中内容仍然有效。需要使用某条结论时，先查 [材料台账](../03-material-register.md)和 [决策台账](../06-decision-register.md)。
+2026-07-15 项目正式重置。重置前的顶层文档、纸面记录、交互原型和研究综合统一收录在 `experimental-pre-reset-2026-07-15/`，更早的材料保存在 `originals/`。同日被合并的拆分文档保存在 `core-doc-compression-2026-07-15/`。三者都不再拥有当前设计效力。
 
-## 原始文件映射
-
-| 原位置 | 归档位置 |
-| --- | --- |
-| `CONTEXT.md` | `originals/CONTEXT.legacy.md` |
-| `HANDOFF.md` | `originals/HANDOFF.legacy.md` |
-| `docs/mvp-prototype-plan.md` | `originals/mvp-prototype-plan.md` |
-| `docs/design/core-architecture.md` | `originals/core-architecture.legacy.md` |
-| `docs/research/*.md` | `originals/research/*.md` |
-| 用户引用的 Web 游戏开发流程对话 | `originals/referenced-conversation-web-game-workflow.md` |
-| GLM 5.2 与 Sonnet 评审 | `originals/model-reviews/` 中的 prompt 和 result 原文 |
-| Fable 讨论 | `originals/model-reviews/fable-discussion-summary.md`，仅有会话综合 |
-
-归档中最需要警惕的失效内容包括：自动吃丹、优先突破倍率、旧 HTML 原型继续迭代、MVP 已完成、Blazor 已定、固定兑现时间、倍率总线已经成为底层架构。这些内容只能作为历史或未来候选，不能直接执行。
+当前项目只能从 [Docs/README.md](../README.md) 进入。任何归档结论若未来需要重新采用，必须重新研究、重新记录并在当前决策台账中再次确认，不能直接恢复。
