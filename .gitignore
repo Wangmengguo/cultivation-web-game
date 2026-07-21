@@ -1,1 +1,7 @@
 .DS_Store
+
+# Runtime logs
+*.log
+
+# Generated deep-research run artifacts
+/gemini-deep-research-runs/

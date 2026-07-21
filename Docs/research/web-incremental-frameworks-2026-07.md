@@ -8,7 +8,7 @@
 
 Profectus 0.7 不作为长期底座，也不作为默认原型底座。项目不会以短期省事为理由，让现成框架反向塑造完整领域模型。
 
-Grok 已完成独立复核，完整项目内记录见 [profectus-0.7-grok-verification-2026-07.md](profectus-0.7-grok-verification-2026-07.md)。
+Grok 曾完成独立复核；该方案已停止使用，记录仅供追溯，见[历史复核记录](../archive/retired-research/profectus-0.7-grok-verification-2026-07.md)。
 
 ## Profectus 0.7 复核结论
 
